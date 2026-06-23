@@ -1,229 +1,517 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import Image from "next/image";
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useMotionTemplate } from "framer-motion";
 import StaggeredText from "./StaggeredText";
 
-interface CardData {
-  tags: string[];
-  headline: string;
-  body: string;
-  images: string[];
+/* ─────────────────────────────────────────────
+   TypeScript Types
+   ───────────────────────────────────────────── */
+interface ServiceItem {
+  id: string;
+  num: string;
+  title: string;
+  count: string;
+  description: string;
+  image1: string;
+  image2: string;
 }
 
-const CARDS: CardData[] = [
+/* ─────────────────────────────────────────────
+   Service Data (Exactly matching reference screenshot)
+   ───────────────────────────────────────────── */
+const SERVICES: ServiceItem[] = [
   {
-    tags: ["Logo Design", "Brand Systems"],
-    headline: "Branding",
-    body: "Building strong and memorable brand identities that communicate your story, values, and personality. From logo to full visual systems, I design brands that feel",
-    images: ["/works/blackopal-1.jpg", "/works/blackopal-2.jpg", "/project-branding.jpg"],
+    id: "ui-ux",
+    num: "01",
+    title: "UI/UX Design",
+    count: "(4)",
+    description: "Creating clean, modern, and user-centered interfaces focused on usability, accessibility, and seamless user experience.",
+    image1: "/works/archin-1.jpg",
+    image2: "/works/archin-2.jpg",
   },
   {
-    tags: ["Framer Development", "Animation"],
-    headline: "Framer Development",
-    body: "Turning design into fast, interactive, and scalable websites using Framer. I build smooth, modern websites",
-    images: ["/works/archin-1.jpg", "/works/archin-2.jpg", "/project-framer.jpg"],
+    id: "web-design",
+    num: "02",
+    title: "Website Design",
+    count: "(8)",
+    description: "Designing responsive and visually polished websites that reflect brand identity while improving engagement and conversion.",
+    image1: "/works/vntnr-1.jpg",
+    image2: "/works/vntnr-2.jpg",
   },
   {
-    tags: ["UI/UX Design", "Responsive"],
-    headline: "Web Design",
-    body: "Fast, functional, and beautifully designed websites, built to perform across devices and convert visitors into clients.",
-    images: ["/works/apex-1.jpg", "/works/apex-2.jpg", "/project-web.jpg"],
+    id: "mobile-app",
+    num: "03",
+    title: "Mobile App Design",
+    count: "(4)",
+    description: "Crafting intuitive mobile app experiences with smooth navigation, consistent layouts, and user-friendly interactions.",
+    image1: "/works/solstice-1.jpg",
+    image2: "/works/solstice-2.jpg",
+  },
+  {
+    id: "wireframing",
+    num: "04",
+    title: "Wireframing & Prototyping",
+    count: "(7)",
+    description: "Transforming ideas into structured wireframes and interactive prototypes to visualize user flow before development.",
+    image1: "/works/blackopal-1.jpg",
+    image2: "/works/blackopal-2.jpg",
+  },
+  {
+    id: "design-systems",
+    num: "05",
+    title: "Design Systems",
+    count: "(3)",
+    description: "Building scalable design systems with reusable components, typography, spacing, and consistent visual guidelines.",
+    image1: "/works/amber-1.jpg",
+    image2: "/works/amber-2.jpg",
+  },
+  {
+    id: "user-research",
+    num: "06",
+    title: "User Research",
+    count: "(2)",
+    description: "Understanding user behavior, pain points, and goals to create more effective and meaningful product experiences.",
+    image1: "/works/apex-1.jpg",
+    image2: "/works/apex-2.jpg",
   },
 ];
 
-function ServiceCardStack({ images, isDark }: { images: string[]; isDark?: boolean }) {
-  const [stack, setStack] = useState([0, 1, 2]);
+/* ─────────────────────────────────────────────
+   Arrow Icon Component (↗)
+   ───────────────────────────────────────────── */
+interface ArrowIconProps {
+  className?: string;
+}
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setStack((prev) => {
-        // Shuffles the front card (index 2) to the back (index 0)
-        const [back, middle, front] = prev;
-        return [front, back, middle];
-      });
-    }, 1000); // 1 second interval
-    return () => clearInterval(interval);
-  }, []);
-
+function ArrowIcon({ className }: ArrowIconProps) {
   return (
-    <div className="relative w-[190px] h-[210px] flex items-center justify-end flex-shrink-0 md:mr-4 select-none">
-      {images.map((img, index) => {
-        const position = stack.indexOf(index);
-        return (
-          <motion.div
-            key={img}
-            className="absolute right-0 w-[136px] h-[190px] rounded-[20px] overflow-hidden border border-black/5 shadow-[0_8px_30px_rgba(0,0,0,0.06)] bg-white origin-bottom"
-            animate={{
-              x: position === 0 ? [0, 50, -36] : position === 1 ? -18 : 0,
-              scale: position === 0 ? [1, 1.02, 0.9] : position === 1 ? 0.95 : 1,
-              zIndex: position === 0 ? 10 : position === 1 ? 20 : 30,
-              opacity: position === 0 ? [1, 1, 0.75] : position === 1 ? 0.9 : 1,
-            }}
-            transition={{
-              duration: 0.65,
-              ease: [0.25, 1, 0.5, 1],
-              zIndex: {
-                delay: position === 0 ? 0.25 : 0,
-                duration: 0,
-              }
-            }}
-          >
-            <Image
-              src={img}
-              alt=""
-              fill
-              sizes="136px"
-              className="object-cover pointer-events-none"
-              priority={index === 0}
-            />
-
-            {/* Pagination Dots Overlay inside the front card */}
-            {position === 2 && (
-              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1 z-40 pointer-events-none">
-                {images.map((_, i) => (
-                  <div
-                    key={i}
-                    className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${stack[2] === i
-                      ? (isDark ? "bg-white w-3" : "bg-black/70 w-3")
-                      : (isDark ? "bg-white/30" : "bg-black/20")
-                      }`}
-                  />
-                ))}
-              </div>
-            )}
-          </motion.div>
-        );
-      })}
-    </div>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <line x1="7" y1="17" x2="17" y2="7" />
+      <polyline points="7 7 17 7 17 17" />
+    </svg>
   );
 }
 
-export default function Services() {
+/* ─────────────────────────────────────────────
+   Overlapping Double Card Preview Component (Desktop)
+   - Performs composite-only scale and opacity reveals.
+   - Utilizes GPU-accelerated clipPath transitions.
+   - Implements Z-axis depth layers for real 3D spacing when container tilts.
+   ───────────────────────────────────────────── */
+interface ImageStackPreviewProps {
+  service: ServiceItem;
+}
+
+function ImageStackPreview({ service }: ImageStackPreviewProps) {
   return (
-    <section id="about" className="bg-[#F8F8FA] text-black py-[120px] pb-[80px] px-3 relative z-10">
-      <div className="max-w-[900px] mx-auto flex flex-col">
+    <motion.div
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      style={{ transformStyle: "preserve-3d" }}
+      className="absolute inset-0 flex items-center justify-center pointer-events-none"
+    >
+      {/* Background shadow glow */}
+      <div 
+        className="absolute w-[110px] h-[140px] bg-purple-500/5 filter blur-2xl rounded-full" 
+        style={{ transform: "translateZ(-30px)" }}
+      />
 
-        {/* Section Label */}
-        <motion.div
-          initial={{ x: -20, opacity: 0 }}
-          whileInView={{ x: 0, opacity: 1 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="framer-4zfn48 flex items-center justify-start gap-1 mb-4 select-none"
-        >
-          <div className="framer-a664sh" style={{ transform: "none" }}>
-            <p
-              className="font-kyiv font-light text-[15px]"
-              style={{ color: "#6B21D9" }}
-            >
-              (
-            </p>
-          </div>
-          <span className="font-kyiv-sans font-medium text-[13px] tracking-[-0.12em] text-[#0D0D0D]">
-            services
-          </span>
-          <div className="framer-18f87tz" style={{ transform: "none" }}>
-            <p
-              className="font-kyiv font-light text-[15px]"
-              style={{ color: "#6B21D9" }}
-            >
-              )
-            </p>
-          </div>
-        </motion.div>
+      {/* Back Image Card (Left side, tilted slightly backward in Z-space) */}
+      <motion.div
+        variants={{
+          initial: { 
+            opacity: 0, 
+            scale: 0.85, 
+            x: -20, 
+            rotate: -15,
+            clipPath: "inset(10% 10% 10% 10% round 12px)"
+          },
+          animate: { 
+            opacity: 0.85, 
+            scale: 0.95, 
+            x: -14, 
+            rotate: -6,
+            clipPath: "inset(0% 0% 0% 0% round 12px)",
+            transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] }
+          },
+          exit: { 
+            opacity: 0, 
+            scale: 0.85, 
+            x: -20, 
+            rotate: -15,
+            clipPath: "inset(10% 10% 10% 10% round 12px)",
+            transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] }
+          }
+        }}
+        style={{ 
+          transformStyle: "preserve-3d",
+          z: -10
+        }}
+        className="absolute w-[110px] h-[140px] bg-[#0E0E10] rounded-[12px] shadow-[0_8px_24px_rgba(0,0,0,0.1)] overflow-hidden border border-white/5 z-0"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={service.image1}
+          alt={`${service.title} preview illustration`}
+          className="w-full h-full object-cover opacity-75"
+        />
+      </motion.div>
 
-        {/* Headline */}
-        <div className="framer-1d876bs" data-framer-name="Content">
-          <div className="framer-p0ih05-container" data-framer-name="Reveal Text">
-            <h2 className="font-kyiv text-[32px] md:text-[52px] font-bold leading-[1.1] text-[#0D0D0D] max-w-[90%] mb-16 tracking-[-0.02em]">
-              <StaggeredText
-                text="Your Competitors Didn't Get Better."
-                trigger="scroll"
-                delay={0.1}
-              />
-              <span className="text-[#888] font-normal ml-2 block md:inline">
-                <StaggeredText
-                  text="They Just Rebranded First."
-                  trigger="scroll"
-                  delay={0.6}
-                />
-              </span>
+      {/* Front Image Card (Right side, overlapping, floating forward in Z-space) */}
+      <motion.div
+        variants={{
+          initial: { 
+            opacity: 0, 
+            scale: 0.85, 
+            x: 20, 
+            rotate: 15,
+            clipPath: "inset(10% 10% 10% 10% round 12px)"
+          },
+          animate: { 
+            opacity: 1, 
+            scale: 1, 
+            x: 14, 
+            rotate: 6,
+            clipPath: "inset(0% 0% 0% 0% round 12px)",
+            transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: 0.04 }
+          },
+          exit: { 
+            opacity: 0, 
+            scale: 0.85, 
+            x: 20, 
+            rotate: 15,
+            clipPath: "inset(10% 10% 10% 10% round 12px)",
+            transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] }
+          }
+        }}
+        style={{ 
+          transformStyle: "preserve-3d",
+          z: 15
+        }}
+        className="absolute w-[110px] h-[140px] bg-white rounded-[12px] shadow-[0_12px_30px_rgba(0,0,0,0.12)] overflow-hidden border border-neutral-200/40 z-10"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={service.image2}
+          alt={`${service.title} preview mockup`}
+          className="w-full h-full object-cover"
+        />
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Desktop Row 3D Parallax Hover Container
+   - Tracks mouse movements inside the active preview row.
+   - Smoothly rotates on X/Y axes without triggering component re-renders.
+   ───────────────────────────────────────────── */
+interface RowPreviewContainerProps {
+  isActive: boolean;
+  service: ServiceItem;
+}
+
+function RowPreviewContainer({ isActive, service }: RowPreviewContainerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rectRef = useRef<DOMRect | null>(null);
+  
+  // Motion values to keep mouse coordinates reactive without state updates
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  // Springs for buttery smooth physics transitions
+  const rotateX = useSpring(
+    useTransform(mouseY, [-0.5, 0.5], [12, -12]), 
+    { stiffness: 100, damping: 20 }
+  );
+  const rotateY = useSpring(
+    useTransform(mouseX, [-0.5, 0.5], [-12, 12]), 
+    { stiffness: 100, damping: 20 }
+  );
+
+  // Combine springs into a standard CSS transform property via useMotionTemplate
+  const transform = useMotionTemplate`perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    let rect = rectRef.current;
+    if (!rect) {
+      if (!containerRef.current) return;
+      rect = containerRef.current.getBoundingClientRect();
+      rectRef.current = rect;
+    }
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    mouseX.set(x);
+    mouseY.set(y);
+  };
+
+  const handleMouseLeave = () => {
+    rectRef.current = null;
+    mouseX.set(0);
+    mouseY.set(0);
+  };
+
+  return (
+    <motion.div
+      ref={containerRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        transform,
+        transformStyle: "preserve-3d"
+      }}
+      className="relative w-[240px] h-[160px] flex items-center justify-center pointer-events-auto select-none"
+    >
+      <AnimatePresence>
+        {isActive && (
+          <ImageStackPreview service={service} />
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+/* ─────────────────────────────────────────────
+   Main Services Component
+   ───────────────────────────────────────────── */
+export default function Services() {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  // Monitor breakpoint states
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Viewport center intersection detector (Desktop & Mobile)
+  useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: "-45% 0px -45% 0px", // Detect inside vertical 10% center band
+      threshold: 0,
+    };
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const index = rowRefs.current.findIndex((ref) => ref === entry.target);
+          if (index !== -1) {
+            setActiveIndex(index);
+          }
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions);
+    rowRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  // Click behavior transitions active state and scrolls views into center
+  const handleRowClick = (index: number) => {
+    setActiveIndex(index);
+    rowRefs.current[index]?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  };
+
+  return (
+    <section
+      id="about"
+      className="bg-brand-bg text-text-main pb-[120px] pb-[80px] px-4 relative z-10 overflow-hidden"
+    >
+      <div className="max-w-[1080px] mx-auto flex flex-col">
+        
+        {/* Top Header Row (matching SelectedWorks heading design) */}
+        <div className="flex flex-col items-center gap-3 w-full mb-6 border-b border-[#E3E3E8] pb-6">
+          <p className="font-kyiv-sans text-[14px] font-normal leading-normal text-[#5C5C5C] m-0 select-none">
+            (Services)
+          </p>
+          <div className="flex items-end">
+            <h2 className="font-kyiv text-[clamp(48px,5.5vw,80px)] font-normal leading-none tracking-[-0.02em] m-0 bg-gradient-to-b from-[rgba(12,12,12,0.82)] to-[rgba(12,12,12,0.5)] bg-clip-text text-transparent select-none">
+              Services
             </h2>
           </div>
         </div>
 
-        {/* Stacked Service Cards */}
-        <div className="flex flex-col gap-6 w-full mb-16">
-          {CARDS.map((card, index) => (
-            <motion.div
-              key={card.headline}
-              initial={{ y: 50, opacity: 0 }}
-              whileInView={{ y: 0, opacity: 1 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{
-                type: "spring",
-                stiffness: 100,
-                damping: 15,
-                delay: index * 0.12,
-              }}
-              whileHover={{
-                y: -6,
-                borderColor: "rgba(107,33,217,0.20)",
-                boxShadow: "0 24px 60px rgba(107,33,217,0.08)",
-              }}
-              className="group bg-white border border-black/6 rounded-[32px] p-8 md:p-12 flex flex-col md:flex-row gap-8 items-center justify-between transition-all duration-300 shadow-[0_4px_24px_rgba(0,0,0,0.02)] cursor-pointer"
-            >
-              {/* Left text side */}
-              <div className="flex-1 flex flex-col items-start text-left">
-                {/* Title */}
-                <h3 className="font-kyiv-sans font-bold text-3xl md:text-[42px] text-[#0D0D0D] tracking-[-0.04em] leading-[1.05] mb-4">
-                  {card.headline}
-                </h3>
-
-                {/* Tags row */}
-                <div className="flex flex-wrap gap-2 mb-5">
-                  {card.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="px-4 py-1.5 rounded-full bg-white border border-[#E4E2F1] text-[#08070D] text-[12px] md:text-[13px] font-medium font-kyiv-sans tracking-tight"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Body */}
-                <p className="font-kyiv-sans text-[15px] md:text-[16px] leading-relaxed text-[#555] font-light max-w-[90%]">
-                  {card.body}
-                </p>
-              </div>
-
-              {/* Right stacked cards side */}
-              <div className="w-full md:w-auto flex justify-center md:justify-end py-6 md:py-0">
-                <ServiceCardStack images={card.images} isDark={index === 2} />
-              </div>
-            </motion.div>
-          ))}
+        {/* Section Headline */}
+        <div className="mb-10 flex justify-center max-w-[90%] m-auto text-center">
+          <h2 className="font-kyiv-serif text-[32px] md:text-[40px] font-bold leading-[1.1] text-[#0D0D0D] max-w-[90%] tracking-[-0.02em]">
+            <StaggeredText
+              text="Your Competitors Didn't Get Better."
+              trigger="scroll"
+              delay={0.1}
+            />
+            <span className="font-kyiv-serif text-[#888] font-normal ml-2 block md:inline">
+              <StaggeredText
+                text="They Just Rebranded First."
+                trigger="scroll"
+                delay={0.6}
+              />
+            </span>
+          </h2>
         </div>
 
-        {/* Section End CTA */}
-        <motion.a
-          href="#contact"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true, amount: 0.1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          whileHover={{
-            backgroundColor: "#6B21D9",
-            y: -3,
-            boxShadow: "0 12px 40px rgba(107,33,217,0.40)",
-          }}
-          className="w-full h-18 rounded-full bg-[#0D0D0D] text-white flex items-center justify-center gap-2 font-kyiv font-medium text-lg md:text-xl transition-all duration-300 cursor-pointer"
-        >
-          <span>● Take the first step. Get in touch</span>
-        </motion.a>
+        {/* Services Showcase typopraphic rows */}
+        <div className="flex flex-col border-b border-[#E3E3E8] relative z-10 w-full">
+          {SERVICES.map((service, index) => {
+            const isActive = activeIndex === index;
+            
+            // Animated color classes
+            const numColorClass = isActive ? "text-[#0D0D0D]" : "text-[#9E9EA5] group-hover:text-[#5F5F65]";
+            const titleColorClass = isActive ? "text-[#0D0D0D]" : "text-[#8A8A92] group-hover:text-[#4C4C52]";
+            const descColorClass = isActive ? "text-[#55555C]" : "text-[#A1A1A8]";
+            const arrowColorClass = isActive 
+              ? "text-[#0D0D0D] opacity-100 scale-105" 
+              : "text-[#B5B5BE] opacity-50 scale-100 group-hover:text-[#5F5F65] group-hover:opacity-100";
+            const arrowRotate = (isMobile && isActive) ? "rotate-90" : "rotate-0";
+
+            return (
+              <motion.button
+                key={service.id}
+                ref={(el) => {
+                  rowRefs.current[index] = el;
+                }}
+                onClick={() => handleRowClick(index)}
+                initial={{ opacity: 0, y: 50, scale: 0.98 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true, margin: "-80px" }}
+                transition={{ 
+                  duration: 0.7, 
+                  ease: [0.16, 1, 0.3, 1],
+                  delay: index * 0.08
+                }}
+                className="w-full text-left flex flex-col py-9 md:py-11 border-t border-[#E3E3E8] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6B21D9] focus-visible:ring-offset-2 relative transition-colors duration-300 group cursor-pointer"
+                aria-expanded={isMobile ? isActive : undefined}
+                aria-controls={isMobile ? `service-content-${index}` : undefined}
+              >
+                <div className="w-full grid grid-cols-1 lg:grid-cols-12 items-center gap-6">
+                  
+                  {/* Left Column (Info / Description) */}
+                  <div className="col-span-1 lg:col-span-7 flex flex-col justify-center text-left">
+                    <div className="flex items-center gap-3.5 md:gap-5 select-none">
+                      {/* Number */}
+                      <span className={`font-kyiv-sans font-bold text-xl md:text-[30px] tracking-tight transition-colors duration-300 ${numColorClass}`}>
+                        {service.num}
+                      </span>
+                      {/* Em-dash */}
+                      <span className="text-neutral-300 text-lg md:text-2xl font-light font-kyiv-sans select-none">—</span>
+                      {/* Title + Count */}
+                      <span className="relative flex items-start">
+                        <span className={`font-kyiv-sans font-semibold text-2xl md:text-[32px] tracking-tight transition-all duration-300 group-hover:translate-x-1.5 ${titleColorClass}`}>
+                          {service.title}
+                        </span>
+                        <span className="text-[10px] md:text-[11px] font-kyiv-sans text-neutral-400 ml-1.5 self-start pt-1 font-normal select-none">
+                          {service.count}
+                        </span>
+                      </span>
+                    </div>
+
+                    {/* Desktop Description */}
+                    {!isMobile && (
+                      <div className={`font-sans text-[14px] md:text-[15px] font-light leading-relaxed mt-4 max-w-[540px] transition-colors duration-300 ${descColorClass}`}>
+                        {service.description}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Middle Column (Row-integrated side-by-side image stack - Desktop only) */}
+                  {!isMobile && (
+                    <div className="lg:col-span-4 flex items-center justify-center select-none pointer-events-auto">
+                      <RowPreviewContainer isActive={isActive} service={service} />
+                    </div>
+                  )}
+
+                  {/* Right Column (Arrow - Desktop & Mobile Row Header) */}
+                  <div className="col-span-1 lg:col-span-1 flex justify-end items-center select-none">
+                    <ArrowIcon className={`w-7 h-7 md:w-9 md:h-9 transition-all duration-300 transform ${arrowColorClass} ${arrowRotate} group-hover:translate-x-1 group-hover:-translate-y-1`} />
+                  </div>
+                </div>
+
+                {/* Mobile-only Accordion expanded panel */}
+                {isMobile && (
+                  <AnimatePresence initial={false}>
+                    {isActive && (
+                      <motion.div
+                        id={`service-content-${index}`}
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ 
+                          height: "auto", 
+                          opacity: 1,
+                          transition: { 
+                            height: { duration: 0.35, ease: "easeOut" },
+                            opacity: { duration: 0.25, delay: 0.05 } 
+                          }
+                        }}
+                        exit={{ 
+                          height: 0, 
+                          opacity: 0,
+                          transition: { 
+                            height: { duration: 0.3, ease: "easeIn" },
+                            opacity: { duration: 0.2 } 
+                          }
+                        }}
+                        className="overflow-hidden w-full text-left"
+                      >
+                        <div className="pb-4 pt-4 flex flex-col gap-6">
+                          {/* Accordion description */}
+                          <p className={`font-sans text-[14px] leading-relaxed transition-colors duration-300 ${descColorClass}`}>
+                            {service.description}
+                          </p>
+
+                          {/* Mobile Overlapping Preview */}
+                          <div className="relative h-[220px] w-full flex items-center justify-center overflow-visible my-3 select-none pointer-events-none">
+                            <div className="absolute w-24 h-24 bg-purple-500/10 filter blur-xl rounded-full" />
+
+                            <div className="absolute w-[130px] h-[170px] bg-[#0E0E10] rounded-[12px] shadow-lg overflow-hidden border border-white/5 -rotate-8 -translate-x-10 opacity-80">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={service.image1}
+                                alt=""
+                                className="w-full h-full object-cover opacity-75"
+                              />
+                            </div>
+
+                            <div className="absolute w-[130px] h-[170px] bg-white rounded-[12px] shadow-lg overflow-hidden border border-neutral-200/40 rotate-8 translate-x-10 z-10">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={service.image2}
+                                alt=""
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                )}
+              </motion.button>
+            );
+          })}
+        </div>
 
       </div>
     </section>

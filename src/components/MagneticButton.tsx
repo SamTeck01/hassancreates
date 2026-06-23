@@ -30,10 +30,16 @@ export default function MagneticButton({
   const x = useSpring(mx, { stiffness: 250, damping: 20 });
   const y = useSpring(my, { stiffness: 250, damping: 20 });
 
+  const rectRef = useRef<DOMRect | null>(null);
+
   const handleMove = (e: MouseEvent) => {
     const el = ref.current;
     if (!el) return;
-    const r = el.getBoundingClientRect();
+    let r = rectRef.current;
+    if (!r) {
+      r = el.getBoundingClientRect();
+      rectRef.current = r;
+    }
     const cx = r.left + r.width / 2;
     const cy = r.top + r.height / 2;
     const dx = e.clientX - cx;
@@ -49,6 +55,7 @@ export default function MagneticButton({
   };
   
   const reset = () => {
+    rectRef.current = null;
     mx.set(0);
     my.set(0);
   };

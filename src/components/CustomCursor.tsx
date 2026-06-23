@@ -54,13 +54,12 @@ export default function CustomCursor() {
         translateY: "-50%",
         mixBlendMode: "difference",
         opacity: visible ? 1 : 0,
+        width: 48,
+        height: 48,
       }}
       animate={{
-        width: hovering ? 48 : 12,
-        height: hovering ? 48 : 12,
-        scale: clicking ? 0.7 : 1,
+        scale: hovering ? (clicking ? 0.7 : 1) : (clicking ? 0.18 : 0.25),
         backgroundColor: hovering ? "rgba(107, 33, 217, 0.2)" : "rgba(255, 255, 255, 1)",
-        borderWidth: hovering ? 2 : 1,
       }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
     >

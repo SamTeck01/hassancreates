@@ -1,232 +1,289 @@
 "use client";
 
 import React, { useRef } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
-import Image from "next/image";
+import { motion, useScroll, useTransform, useMotionTemplate } from "framer-motion";
+import styles from "./SelectedWorks.module.css";
 
-import StaggeredText from "./StaggeredText";
+const NOISE_IMG =
+  "https://framerusercontent.com/images/hiGYz6grmhAHSeZuNKHEuchTGTw.png";
 
-interface Project {
-  number: string;
-  client: string;
-  description: string;
-  image: string;
-  year: string;
-  role: string;
-  services: string[];
-}
-
-const PROJECTS: Project[] = [
+const PROJECTS = [
   {
-    number: "01 / 03",
-    client: "Archin",
+    id: "sticky-trigger-01",
+    stickyTop: 80,
+    zIndex: 10,
+    bgImage: "https://framerusercontent.com/images/x3RMizQqFhQ9G8jF5dqqcbxY8M.png",
+    bgSrcSet:
+      "https://framerusercontent.com/images/x3RMizQqFhQ9G8jF5dqqcbxY8M.png?scale-down-to=512 512w,https://framerusercontent.com/images/x3RMizQqFhQ9G8jF5dqqcbxY8M.png?scale-down-to=1024 1024w,https://framerusercontent.com/images/x3RMizQqFhQ9G8jF5dqqcbxY8M.png?scale-down-to=2048 2048w,https://framerusercontent.com/images/x3RMizQqFhQ9G8jF5dqqcbxY8M.png 2848w",
     description:
       "We've helped businesses across industries achieve their goals. Here are some of our selected works.",
-    image: "/works/archin-1.jpg",
+    number: "01",
+    clientName: "Archin",
+    href: "./works/archin",
+    coverImage:
+      "https://framerusercontent.com/images/olR1jd1vAg59BKYSorw26ZNxY.png",
+    coverSrcSet:
+      "https://framerusercontent.com/images/olR1jd1vAg59BKYSorw26ZNxY.png?scale-down-to=1024 819w,https://framerusercontent.com/images/olR1jd1vAg59BKYSorw26ZNxY.png 912w",
     year: "2025",
     role: "Lead Designer",
     services: ["Website Design", "Product Design", "Branding", "Development"],
   },
   {
-    number: "02 / 03",
-    client: "VNTNR",
+    id: "sticky-trigger-02",
+    stickyTop: 96,
+    zIndex: 11,
+    bgImage: "https://framerusercontent.com/images/MHwFX5PK3mWp7JJNseH8110qdg.png",
+    bgSrcSet:
+      "https://framerusercontent.com/images/MHwFX5PK3mWp7JJNseH8110qdg.png?scale-down-to=512 512w,https://framerusercontent.com/images/MHwFX5PK3mWp7JJNseH8110qdg.png?scale-down-to=1024 1024w,https://framerusercontent.com/images/MHwFX5PK3mWp7JJNseH8110qdg.png?scale-down-to=2048 2048w,https://framerusercontent.com/images/MHwFX5PK3mWp7JJNseH8110qdg.png 2848w",
     description:
       "We've partnered with businesses across various industries to help them achieve their goals.",
-    image: "/works/vntnr-1.jpg",
+    number: "02",
+    clientName: "VNTNR",
+    href: "./works/vntnr",
+    coverImage:
+      "https://framerusercontent.com/images/QhPkJGJBXS8kPS7IhPj7ZBGZpII.png",
+    coverSrcSet:
+      "https://framerusercontent.com/images/QhPkJGJBXS8kPS7IhPj7ZBGZpII.png?scale-down-to=1024 819w,https://framerusercontent.com/images/QhPkJGJBXS8kPS7IhPj7ZBGZpII.png 912w",
     year: "2018",
     role: "Logo Designer",
     services: ["Designing", "Branding", "Redesigning", "Development"],
   },
   {
-    number: "03 / 03",
-    client: "Aeorim",
+    id: "sticky-trigger-03",
+    stickyTop: 112,
+    zIndex: 12,
+    bgImage: "https://framerusercontent.com/images/jXErNhJ75aLqKEeFiIYT76adrM8.png",
+    bgSrcSet:
+      "https://framerusercontent.com/images/jXErNhJ75aLqKEeFiIYT76adrM8.png?scale-down-to=512 512w,https://framerusercontent.com/images/jXErNhJ75aLqKEeFiIYT76adrM8.png?scale-down-to=1024 1024w,https://framerusercontent.com/images/jXErNhJ75aLqKEeFiIYT76adrM8.png?scale-down-to=2048 2048w,https://framerusercontent.com/images/jXErNhJ75aLqKEeFiIYT76adrM8.png 2848w",
     description:
       "We've collaborated with companies from diverse sectors to turn their visions into reality. Here's a look at some of our featured work.",
-    image: "/works/solstice-1.jpg",
+    number: "03",
+    clientName: "Aeorim",
+    href: "./works/aeorim",
+    coverImage:
+      "https://framerusercontent.com/images/yOPV9nZRSJXmNPqyeWfZSThWAc.png",
+    coverSrcSet:
+      "https://framerusercontent.com/images/yOPV9nZRSJXmNPqyeWfZSThWAc.png?scale-down-to=1024 819w,https://framerusercontent.com/images/yOPV9nZRSJXmNPqyeWfZSThWAc.png 912w",
     year: "2023",
     role: "Website Designer",
     services: ["Branding", "Revamp", "Development", "Designing"],
   },
-];
+] as const;
 
-interface CardProps {
+type Project = (typeof PROJECTS)[number];
+
+function WorkCard({
+  project,
+  isLast,
+}: {
   project: Project;
-  index: number;
-  total: number;
-}
+  isLast: boolean;
+}) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
-function ProjectCard({ project, index, total }: CardProps) {
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  // Track how far this card has scrolled past the viewport top
   const { scrollYProgress } = useScroll({
-    target: cardRef,
+    target: wrapperRef,
     offset: ["start start", "end start"],
   });
 
-  // Non-last cards shrink/fade as user scrolls past them
-  const isLast = index === total - 1;
-  const scale = useTransform(scrollYProgress, [0, 1], [1, 0.9]);
-  const opacity = useTransform(scrollYProgress, [0, 0.6, 1], [1, 0.6, 0.3]);
-
-  // Each card sticks a little lower than the previous, creating the layered stack
-  const STICKY_BASE = 80;
-  const STICKY_STEP = 16;
-  const stickyTop = `${STICKY_BASE + index * STICKY_STEP}px`;
+  // Exit: shrink → tilt left → blur away over 60vh
+  // blur capped at 8px (fixing-motion-performance rule 7: never large-surface blur >8px)
+  const scale   = useTransform(scrollYProgress, [0, 1], [1, 0.80]);
+  const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [1, 0.4, 0]);
+  const rotate  = useTransform(scrollYProgress, [0, 1], [0, -8]); // tilt left
+  const blurPx  = useTransform(scrollYProgress, [0, 1], [0, 8]);  // ≤8px per perf skill
+  const filter  = useMotionTemplate`blur(${blurPx}px)`;
 
   return (
-    <div
-      ref={cardRef}
-      className="sticky w-full"
+    <motion.div
+      ref={wrapperRef}
+      id={project.id}
+      className={styles.cardWrapper}
       style={{
-        top: stickyTop,
-        zIndex: 10 + index,
-        /* Give enough scroll room so each card stacks before the next arrives */
-        marginBottom: isLast ? "0" : "100vh",
+        top: project.stickyTop,
+        zIndex: project.zIndex,
+        scale:   isLast ? 1 : scale,
+        opacity: isLast ? 1 : opacity,
+        rotate:  isLast ? 0 : rotate,
+        filter:  isLast ? "blur(0px)" : filter,
+        // 60vh of scroll space for the full exit animation
+        marginBottom: isLast ? 0 : "60vh",
+        transformOrigin: "center center",
       }}
     >
-      <motion.div
-        style={{
-          scale: isLast ? 1 : scale,
-          opacity: isLast ? 1 : opacity,
-        }}
-        className="relative w-full overflow-hidden rounded-[32px] md:rounded-[40px]"
-      /* min-height matches reference: nearly full viewport height */
-      /* aspect-ratio fallback for older browsers */
-      >
-        {/* ── FULL-BLEED BLURRED IMAGE BACKGROUND ───────────────── */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src={project.image}
-            alt=""
-            fill
-            className="object-cover scale-[1.08] blur-[56px] brightness-[0.55] saturate-[1.2]"
-            priority={index === 0}
-          />
-          {/* Dark gradient overlays for readability */}
-          <div className="absolute inset-0 bg-black/40" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30" />
-        </div>
+      {/* framer-AJQo7 framer-v-1ba6yrb */}
+      <div className={styles.cardOuter}>
+        {/* framer-148g6gm */}
+        <div className={styles.workCard}>
 
-        {/* ── CARD CONTENT ──────────────────────────────────────── */}
-        <div className="relative z-10 w-full min-h-[460px] md:min-h-[520px] flex flex-col justify-stretch p-8 md:p-12 lg:p-16">
-          {/* 3-Column Grid */}
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-6 md:gap-8 items-center">
+          {/* BG image — absolute fill */}
+          <div className={styles.bgImageWrap}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              decoding="auto"
+              width={2848}
+              height={1588}
+              sizes="(min-width: 1440px) max(max(min(100vw, 1920px) - 16px, 1px), 1px), (min-width: 810px) and (max-width: 1439.98px) max(max(min(100vw, 1920px) - 16px, 1px), 1px), (max-width: 809.98px) max(calc(min(100vw, 1920px) - 16px), 1px)"
+              srcSet={project.bgSrcSet}
+              src={project.bgImage}
+              alt="BG Image"
+              className={styles.bgImage}
+            />
+          </div>
 
-            {/* LEFT: Description top + Number+ClientName bottom */}
-            <div className="flex flex-col justify-between h-full gap-12 md:gap-0">
-              {/* Description */}
-              <p className="text-white/60 font-kyiv-sans font-light text-[14px] md:text-[15px] leading-relaxed max-w-[280px]">
-                {project.description}
-              </p>
+          {/* Noise overlay — framer-z3ltis */}
+          <div className={styles.noiseOverlay}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              decoding="auto"
+              width={2848}
+              height={1588}
+              src={NOISE_IMG}
+              alt=""
+              aria-hidden="true"
+              className={styles.noiseImage}
+            />
+          </div>
 
-              {/* Number + Client Name */}
-              <div className="flex flex-col gap-1.5 mt-auto">
-                <span className="text-white/35 font-kyiv-sans text-[13px] font-light tracking-[0.08em]">
-                  {project.number}
-                </span>
-                <h3 className="font-kyiv font-bold text-white leading-[0.9] tracking-[-0.04em] text-[clamp(36px,6vw,80px)]">
-                  {project.client}
-                </h3>
+          {/* Blur overlay — framer-1w7zods */}
+          <div className={styles.blurOverlay} />
+
+          {/* Inner content — framer-165nn3j */}
+          <div className={styles.innerContainer}>
+
+            {/* LEFT — framer-1mzphu2 */}
+            <div className={styles.leftCol}>
+
+              {/* Content — framer-9niauw / framer-16geo85 */}
+              <div className={styles.contentBlock}>
+                <p className={styles.descriptionText}>
+                  {project.description}
+                </p>
+              </div>
+
+              {/* Brand — framer-1pir4kz */}
+              <div className={styles.brandBlock}>
+
+                {/* Counter row — framer-r999pn */}
+                <div className={styles.dateRow}>
+                  {/* framer-k15jqr */}
+                  <p className={styles.dateNumber}>{project.number}</p>
+                  {/* framer-1eo6faf */}
+                  <p className={styles.dateSeparator}>&nbsp;/ 03</p>
+                </div>
+
+                {/* Client name h2 — framer-mtdgxz / framer-styles-preset-13pym41 */}
+                <h2 className={styles.clientName}>
+                  <span className={styles.clientNameSpan}>
+                    {project.clientName.split("").map((char, i) => (
+                      <span key={i} className={styles.clientNameChar}>
+                        {char}
+                      </span>
+                    ))}
+                  </span>
+                </h2>
               </div>
             </div>
 
-            {/* CENTER: Portrait Project Mockup */}
-            <div className="flex items-center justify-center order-first md:order-none">
-              <div
-                className="relative overflow-hidden rounded-[20px] md:rounded-[24px] shadow-[0_24px_64px_rgba(0,0,0,0.6)] border border-white/10"
-                style={{ width: "clamp(180px, 22vw, 260px)", height: "clamp(240px, 30vw, 360px)" }}
+            {/* RIGHT — framer-90jchk */}
+            <div className={styles.rightCol}>
+
+              {/* Cover image link — framer-137fg67 framer-5st3ch */}
+              <a
+                href={project.href}
+                className={styles.coverLink}
+                aria-label={`View ${project.clientName} project`}
               >
-                <Image
-                  src={project.image}
-                  alt={project.client}
-                  fill
-                  sizes="(max-width: 768px) 200px, 260px"
-                  className="object-cover"
-                />
-              </div>
-            </div>
+                {/* Inner border highlight — framer-cy9ysw */}
+                <div className={styles.coverBorder} />
+                {/* Image fill — framer-1a1qf3u */}
+                <div className={styles.coverImageWrap}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    decoding="auto"
+                    width={912}
+                    height={1140}
+                    sizes="(min-width: 1440px) 456px, (min-width: 810px) and (max-width: 1439.98px) 300px, (max-width: 809.98px) 300px"
+                    srcSet={project.coverSrcSet}
+                    src={project.coverImage}
+                    alt="Cover Image"
+                    className={styles.coverImage}
+                  />
+                </div>
+              </a>
 
-            {/* RIGHT: Year / Role / Services */}
-            <div className="flex flex-col justify-between h-full gap-8 md:gap-0 md:pl-8 lg:pl-16">
-              {/* Year */}
-              <div className="flex flex-col gap-1.5">
-                <span className="text-white/40 font-kyiv-sans font-light text-[12px] tracking-[0.12em] uppercase">
-                  Year
-                </span>
-                <span className="text-white font-kyiv font-bold text-[22px] md:text-[26px] leading-none">
-                  {project.year}
-                </span>
-              </div>
+              {/* Stats panel — framer-5i263h */}
+              <div className={styles.statsPanel}>
 
-              {/* Role */}
-              <div className="flex flex-col gap-1.5">
-                <span className="text-white/40 font-kyiv-sans font-light text-[12px] tracking-[0.12em] uppercase">
-                  Role
-                </span>
-                <span className="text-white font-kyiv font-bold text-[18px] md:text-[22px] leading-none">
-                  {project.role}
-                </span>
-              </div>
+                {/* Top stats — framer-rwuc2c */}
+                <div className={styles.statsTop}>
+                  {/* Year — framer-1dvkm6c */}
+                  <div className={styles.statBlock}>
+                    {/* framer-gpmcii */}
+                    <p className={styles.statLabel}>Year</p>
+                    {/* framer-1ye5dlq / framer-styles-preset-13e92k5 */}
+                    <p className={styles.statValue}>{project.year}</p>
+                  </div>
+                  {/* Role — framer-25oos7 */}
+                  <div className={styles.statBlock}>
+                    {/* framer-6pp3pc */}
+                    <p className={styles.statLabel}>Role</p>
+                    {/* framer-x4df5s */}
+                    <p className={styles.statValue}>{project.role}</p>
+                  </div>
+                </div>
 
-              {/* Services — plain list, no border */}
-              <div className="flex flex-col gap-2">
-                <span className="text-white/40 font-kyiv-sans font-light text-[12px] tracking-[0.12em] uppercase">
-                  Services
-                </span>
-                <div className="flex flex-col gap-1.5">
+                {/* Services — framer-15okfae */}
+                <div className={styles.servicesBlock}>
+                  {/* framer-10fme74 */}
+                  <p className={styles.servicesLabel}>Services</p>
+                  {/* framer-1tfezv5 / framer-dzuyjn / framer-1ny8fgc / framer-12n5dvj */}
                   {project.services.map((srv) => (
-                    <span
-                      key={srv}
-                      className="text-white font-kyiv font-bold text-[16px] md:text-[18px] leading-snug"
-                    >
+                    <p key={srv} className={styles.serviceItem}>
                       {srv}
-                    </span>
+                    </p>
                   ))}
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </motion.div>
-    </div>
+      </div>
+    </motion.div>
   );
 }
 
 export default function SelectedWorks() {
   return (
-    <section
-      id="works"
-      className="relative bg-[#F8F8FA] text-black z-20"
-      style={{ paddingTop: "96px", paddingBottom: 0 }}
-    >
-      {/* Section heading — full width with side padding */}
-      <div className="w-full px-4 md:px-5 pb-16">
-        <div className="max-w-[1400px] mx-auto flex flex-col gap-2 text-left">
-          <span className="text-[12px] uppercase tracking-[0.14em] text-black/35 font-kyiv font-light select-none">
-            (Recent Works)
-          </span>
-          <h2 className="text-[40px] md:text-[58px] font-kyiv font-bold text-black tracking-[-0.03em] leading-none">
-            <StaggeredText text="Recent Works" trigger="scroll" delay={0.1} />
-          </h2>
+    /* framer-s0bx2r */
+    <section className={styles.section} data-framer-name="Works-Section">
+      {/* framer-3u9vmd */}
+      <div className={styles.container} data-framer-name="Container">
+
+        {/* framer-c6tfrg — flex-row: label left, heading right */}
+        <div className={styles.top} data-framer-name="Top">
+          {/* framer-1u53hr0 */}
+          <p className={styles.label}>(Recent Works)</p>
+
+          {/* framer-1raj7xj */}
+          <div className={styles.headingBox} data-framer-name="Heading">
+            {/* framer-1df4roe / framer-benisz */}
+            {/* framer-styles-preset-nv8ngd with data-text-fill gradient */}
+            <h2 className={styles.headingText}>Recent Works</h2>
+          </div>
+        </div>
+
+        {/* framer-oh5ifz */}
+        <div className={styles.bottom} data-framer-name="Bottom">
+          {PROJECTS.map((project, index) => (
+            <WorkCard
+              key={project.id}
+              project={project}
+              isLast={index === PROJECTS.length - 1}
+            />
+          ))}
         </div>
       </div>
-
-      {/* Stacking cards container — full width, no horizontal padding */}
-      <div className="w-full flex flex-col px-1.5 md:px-2 gap-0">
-        {PROJECTS.map((project, index) => (
-          <ProjectCard
-            key={project.client}
-            project={project}
-            index={index}
-            total={PROJECTS.length}
-          />
-        ))}
-      </div>
-
-      {/* Spacer so content after this section doesn't overlap the last sticky card */}
-      <div style={{ height: "100px" }} />
     </section>
   );
 }

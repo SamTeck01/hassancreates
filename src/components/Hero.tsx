@@ -38,8 +38,14 @@ export default function Hero() {
   const rx = useSpring(useTransform(my, [-1, 1], [6, -6]), { stiffness: 200, damping: 20 });
   const ry = useSpring(useTransform(mx, [-1, 1], [-6, 6]), { stiffness: 200, damping: 20 });
 
+  const avatarRectRef = useRef<DOMRect | null>(null);
+
   const onMove = (e: React.MouseEvent) => {
-    const r = e.currentTarget.getBoundingClientRect();
+    let r = avatarRectRef.current;
+    if (!r) {
+      r = e.currentTarget.getBoundingClientRect();
+      avatarRectRef.current = r;
+    }
     mx.set(((e.clientX - r.left) / r.width) * 2 - 1);
     my.set(((e.clientY - r.top) / r.height) * 2 - 1);
   };
@@ -113,7 +119,11 @@ export default function Hero() {
           {/* Avatar with 3D tilt */}
           <motion.div
             onMouseMove={onMove}
-            onMouseLeave={() => { mx.set(0); my.set(0); }}
+            onMouseLeave={() => {
+              avatarRectRef.current = null;
+              mx.set(0);
+              my.set(0);
+            }}
             style={{ rotateX: rx, rotateY: ry, transformPerspective: 600 }}
             className="inline-block cursor-pointer select-none"
           >
