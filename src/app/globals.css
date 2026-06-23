@@ -2,11 +2,112 @@
 
 @font-face {
   font-family: 'KyivType Titling';
-  src: local('KyivType Titling'),
-       local('Kyiv*Type Titling'),
-       url('/fonts/KyivType-Titling.woff2') format('woff2'),
-       url('/fonts/KyivType-Titling.ttf') format('truetype');
+  src: url('/fonts/KyivTypeTitling-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'KyivType Titling';
+  src: url('/fonts/KyivTypeTitling-Regular.woff2') format('woff2');
   font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'KyivType Titling';
+  src: url('/fonts/KyivTypeTitling-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'KyivType Titling';
+  src: url('/fonts/KyivTypeTitling-Bold3.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'KyivType Sans';
+  src: url('/fonts/KyivTypeSans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'KyivType Sans';
+  src: url('/fonts/KyivTypeSans-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'KyivType Sans';
+  src: url('/fonts/KyivTypeSans-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'KyivType Sans';
+  src: url('/fonts/KyivTypeSans-Bold3.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'KyivType Sans';
+  src: url('/fonts/KyivTypeSans-Black.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'KyivType Serif';
+  src: url('/fonts/KyivTypeSerif-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'KyivType Serif';
+  src: url('/fonts/KyivTypeSerif-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'KyivType Serif';
+  src: url('/fonts/KyivTypeSerif-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'KyivType Serif';
+  src: url('/fonts/KyivTypeSerif-Bold3.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'KyivType Serif';
+  src: url('/fonts/KyivTypeSerif-Black.woff2') format('woff2');
+  font-weight: 900;
   font-style: normal;
   font-display: swap;
 }
@@ -14,22 +115,35 @@
 @theme {
   /* Font Family Definitions */
   --font-kyiv: 'KyivType Titling', 'Kyiv*Type Titling', Georgia, serif;
-  
-  /* Color Definitions */
-  --color-brand-purple: #7A32F2;
-  --color-brand-purple-dark: #5611d2;
-  --color-brand-purple-light: #9B3BF3;
-  --color-brand-bg: #FCFBFF;
-  --color-brand-gray: #555555;
+  --font-kyiv-sans: 'KyivType Sans', 'Kyiv*Type Sans', system-ui, sans-serif;
+  --font-kyiv-serif: 'KyivType Serif', 'Kyiv*Type Serif', Georgia, serif;
+  --font-geist: var(--font-geist-sans), 'Geist', system-ui, sans-serif;
+
+  /* ── Exact Figma brand colours ── */
+  --color-brand-purple: #6B21D9;
+  /* Primary – used everywhere          */
+  --color-brand-purple-dark: #391173;
+  /* Gradient end on arc ellipse        */
+  --color-brand-purple-light: #cdb4f7;
+  /* Ambient glow soft tint             */
+  --color-brand-bg: #FFFFFF;
+  /* Page background (Figma: white)     */
+  --color-brand-text: #08070D;
+  /* Foreground                         */
+  --color-brand-gray: #444444;
+  /* Subtitle colour (Figma: #444)      */
   --color-brand-border: #E4E2F1;
-  
-  /* Custom shadows and borders */
-  --shadow-glow: 0 10px 30px -10px rgba(122, 50, 242, 0.35);
-  --shadow-subtle: 0 4px 20px rgba(8, 7, 13, 0.03);
+
+  /* Shadows */
+  --shadow-glow: 0px 5px 11px rgba(0, 0, 0, 0.10),
+    0px 20px 20px rgba(0, 0, 0, 0.09),
+    0px 46px 28px rgba(0, 0, 0, 0.05),
+    0px 82px 33px rgba(0, 0, 0, 0.01);
+  --shadow-subtle: 0 4px 20px rgba(8, 7, 13, 0.04);
 }
 
 :root {
-  --background: #FCFBFF;
+  --background: #FFFFFF;
   --foreground: #08070D;
 }
 
@@ -40,17 +154,17 @@ body {
   min-height: 100vh;
 }
 
-/* Custom visual styles for premium animations & effects */
+/* ── Ambient cursor-follow orb ── */
 .ambient-glow {
   position: absolute;
   border-radius: 50%;
   filter: blur(140px);
-  opacity: 0.45;
   pointer-events: none;
   z-index: 0;
   will-change: transform;
 }
 
+/* ── Pill header underline on "Portfolio!" ── */
 .custom-underline {
   position: relative;
   display: inline-block;
@@ -60,60 +174,20 @@ body {
   content: '';
   position: absolute;
   left: 0;
-  bottom: 0px;
+  bottom: -2px;
   width: 100%;
-  height: 2px;
-  background-color: #7A32F2;
+  height: 1.5px;
+  background-color: #fff;
   border-radius: 2px;
-  transform-origin: left;
 }
 
-.double-underline {
-  position: relative;
-  display: inline-block;
-}
-
-.double-underline::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: -4px;
-  width: 100%;
-  height: 4px;
-  border-bottom: 2px solid #7A32F2;
-  border-top: 1px solid #7A32F2;
-  padding-bottom: 1px;
-}
-
+/* ── Backdrop blur helper ── */
 .blur-backdrop {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
 
-/* Arc styles */
-.arc-glow-container {
-  position: absolute;
-  bottom: -150px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: 1100px;
-  height: 450px;
-  pointer-events: none;
-  z-index: 10;
-  overflow: visible;
-}
-
-.glow-line {
-  fill: none;
-  stroke: url(#arc-gradient);
-  stroke-width: 5;
-  stroke-linecap: round;
-  filter: drop-shadow(0 0 25px rgba(155, 59, 243, 0.8)) drop-shadow(0 0 10px rgba(122, 50, 242, 0.4));
-  stroke-dasharray: 2000;
-  stroke-dashoffset: 2000;
-}
-
+/* ── SVG arc drop-shadow for the traveling highlight ── */
 .glow-trail {
   fill: none;
   stroke: #ffffff;
@@ -122,4 +196,15 @@ body {
   filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9));
   stroke-dasharray: 120 800;
   stroke-dashoffset: 0;
+}
+
+@media (pointer: fine) {
+  body, a, button, [role="button"], input, textarea, select {
+    cursor: none !important;
+  }
+}
+
+.hero-glow {
+  background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 70%);
+  filter: blur(90px);
 }

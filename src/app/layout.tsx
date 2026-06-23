@@ -2,10 +2,16 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
+// Global motion components
+import CustomCursor from "@/components/CustomCursor";
+import SmoothScroll from "@/components/SmoothScroll";
+import ScrollProgress from "@/components/ScrollProgress";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
   display: "swap",
+  weight: ["400", "500", "700"],
 });
 
 const geistMono = Geist_Mono({
@@ -15,14 +21,15 @@ const geistMono = Geist_Mono({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#7A32F2",
+  themeColor: "#6B21D9",
   width: "device-width",
   initialScale: 1,
 };
 
 export const metadata: Metadata = {
   title: "hassancreates | Visual & Motion Designer Portfolio",
-  description: "I turn ideas into visuals that stick. Welcome to the portfolio of Hassan, a Visual and Motion Designer working at the intersection of strategy and aesthetics.",
+  description:
+    "I turn ideas into visuals that stick. Welcome to the portfolio of Hassan, a Visual and Motion Designer working at the intersection of strategy and aesthetics.",
   keywords: [
     "Hassan",
     "hassancreates",
@@ -35,13 +42,14 @@ export const metadata: Metadata = {
     "UI/UX Design",
     "Kyiv Type Titling",
     "Design Portfolio",
-    "Digital Art"
+    "Digital Art",
   ],
   authors: [{ name: "Hassan", url: "https://hassancreates.com" }],
   creator: "Hassan",
   openGraph: {
     title: "hassancreates | Visual & Motion Designer Portfolio",
-    description: "I turn ideas into visuals that stick. Welcome to the portfolio of Hassan, a Visual and Motion Designer.",
+    description:
+      "I turn ideas into visuals that stick. Welcome to the portfolio of Hassan, a Visual and Motion Designer.",
     url: "https://hassancreates.com",
     siteName: "hassancreates",
     locale: "en_US",
@@ -50,7 +58,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "hassancreates | Visual & Motion Designer Portfolio",
-    description: "I turn ideas into visuals that stick. Welcome to the portfolio of Hassan, a Visual and Motion Designer.",
+    description:
+      "I turn ideas into visuals that stick. Welcome to the portfolio of Hassan, a Visual and Motion Designer.",
     creator: "@hassancreates",
   },
   robots: {
@@ -76,7 +85,10 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col antialiased selection:bg-brand-purple/20 selection:text-brand-purple-dark">
+      <body className="min-h-full flex flex-col antialiased">
+        <CustomCursor />
+        <SmoothScroll />
+        <ScrollProgress />
         {children}
       </body>
     </html>
