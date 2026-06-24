@@ -17,13 +17,17 @@ import StaggeredText from "./StaggeredText";
 
 // ── SparkIcon ─────────────────────────────────────────────────────────────────
 // The exported Figma SVG asset (39×28 px, node #2003:43).
-const SparkIcon = () => (
+const SparkIcon = ({ isMobile }: { isMobile: boolean }) => (
   <motion.span
-    className="absolute top-3 -right-6 inline-flex"
+    className="absolute inline-flex"
+    style={{
+      top: isMobile ? "2px" : "12px",
+      right: isMobile ? "-14px" : "-24px",
+    }}
     animate={{ scale: [1, 1.18, 1], rotate: [0, 10, -5, 0] }}
     transition={{ duration: 2.6, repeat: Infinity, ease: "easeInOut" }}
   >
-    <Image src="/spark.svg" alt="" width={24} height={18} priority />
+    <Image src="/spark.svg" alt="" width={isMobile ? 12 : 24} height={isMobile ? 9 : 18} priority />
   </motion.span>
 );
 
@@ -54,6 +58,14 @@ export default function Hero() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [cycleCount, setCycleCount] = useState(0);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const states = ["Hassan!", "a Motion Designer", "a Visual Designer"];
 
@@ -104,7 +116,7 @@ export default function Hero() {
         <div className="absolute inset-x-0 top-1/3 mx-auto h-[300px] w-[850px] max-w-[95%] bg-white/60 rounded-full filter blur-[90px] pointer-events-none z-0" />
 
         {/* Line 1: Hi, I'm [avatar] [cycling text] */}
-        <div className="relative flex flex-wrap items-center justify-center gap-3 text-[clamp(28px,4.5vw,46px)] font-medium text-black z-10">
+        <div className="relative flex flex-nowrap items-center justify-center gap-1.5 md:gap-3 text-[clamp(20px,4.2vw,28px)] md:text-[clamp(28px,4.5vw,46px)] font-medium text-black z-10 whitespace-nowrap">
           <StaggeredText
             text="Hi,"
             delay={1.1}
@@ -129,11 +141,13 @@ export default function Hero() {
           >
             <motion.div
               style={{
-                width: 46,
-                height: 46,
+                width: isMobile ? 26 : 46,
+                height: isMobile ? 26 : 46,
                 borderRadius: "50%",
-                border: "2px solid #6B21D9",
-                boxShadow: "0px 1px 3px rgba(0,0,0,0.10), 0px 5px 5px rgba(0,0,0,0.09), 0px 12px 7px rgba(0,0,0,0.05), 0px 4px 14px rgba(107,33,217,0.30)",
+                border: isMobile ? "1px solid #6B21D9" : "2px solid #6B21D9",
+                boxShadow: isMobile 
+                  ? "0px 2px 6px rgba(107,33,217,0.25)"
+                  : "0px 1px 3px rgba(0,0,0,0.10), 0px 5px 5px rgba(0,0,0,0.09), 0px 12px 7px rgba(0,0,0,0.05), 0px 4px 14px rgba(107,33,217,0.30)",
                 overflow: "hidden",
                 background: "#fff",
               }}
@@ -148,7 +162,7 @@ export default function Hero() {
                 src="/avatar.png"
                 alt="Hassan"
                 fill
-                sizes="46px"
+                sizes={isMobile ? "26px" : "46px"}
                 className="object-cover"
                 priority
               />
@@ -177,7 +191,7 @@ export default function Hero() {
         </div>
 
         {/* Line 2-3: I turn ideas into visuals that stick. */}
-        <h1 className="relative mt-6 text-[clamp(32px,7.5vw,74px)] font-medium leading-[1.05] text-black z-10 tracking-[-0.04em]">
+        <h1 className="relative mt-6 text-[clamp(30px,6vw,44px)] md:text-[clamp(44px,7.5vw,74px)] font-medium leading-[1.05] text-black z-10 tracking-[-0.04em]">
           <StaggeredText
             text="I turn"
             delay={1.3}
@@ -186,7 +200,7 @@ export default function Hero() {
           <span className="inline-block">&nbsp;</span>
           <span className="relative inline-block font-kyiv font-bold text-[#6B21D9]">
             <StaggeredText text="ideas" delay={1.45} />
-            <SparkIcon />
+            <SparkIcon isMobile={isMobile} />
           </span>
           <br />
           <StaggeredText
@@ -216,7 +230,7 @@ export default function Hero() {
           initial={{ y: 15, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 80, damping: 16, delay: 2.0 }}
-          className="relative mt-7 mx-auto max-w-[600px] text-[17px] font-light text-[#444] font-kyiv z-10"
+          className="relative mt-7 mx-auto max-w-[600px] text-[17px] font-light text-[#444] font-kyiv-sans z-10"
         >
           Working at the intersection of strategy and aesthetics to make that happen.
         </motion.p>
@@ -232,7 +246,7 @@ export default function Hero() {
             as="a"
             href="#works"
             radius={60}
-            className="h-[58px] px-7 rounded-full bg-white border border-[#6B21D9] text-[#6B21D9] text-[15px] font-medium flex items-center gap-2 hover:bg-[#FAF6FF] transition-colors shadow-[0_4px_14px_rgba(107,33,217,0.08)] cursor-pointer"
+            className="h-[58px] px-7 rounded-full bg-white border border-[#6B21D9] text-[#6B21D9] text-[15px] font-medium font-kyiv-sans flex items-center gap-2 hover:bg-[#FAF6FF] transition-colors shadow-[0_4px_14px_rgba(107,33,217,0.08)] cursor-pointer"
           >
             <HugeiconsIcon icon={Briefcase02Icon} size={20} strokeWidth={2} /> View my works
           </MagneticButton>
@@ -240,7 +254,7 @@ export default function Hero() {
             as="a"
             href="#contact"
             radius={60}
-            className="group h-[58px] px-7 rounded-full bg-[#6B21D9] text-white text-[15px] font-medium flex items-center gap-2 hover:shadow-[0_10px_28px_rgba(107,33,217,0.5)] transition-shadow cursor-pointer"
+            className="group h-[58px] px-7 rounded-full bg-[#6B21D9] text-white text-[15px] font-medium font-kyiv-sans flex items-center gap-2 hover:shadow-[0_10px_28px_rgba(107,33,217,0.5)] transition-shadow cursor-pointer"
           >
             Let&apos;s Talk
             <motion.span className="flex items-center" animate={{ x: [0, 3, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>

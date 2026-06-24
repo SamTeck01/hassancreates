@@ -132,14 +132,14 @@ function ImageStackPreview({ service, isMobile }: ImageStackPreviewProps) {
             scale: 0.85, 
             x: isMobile ? -14 : -20, 
             rotate: -15,
-            clipPath: "inset(10% 10% 10% 10% round 8px)"
+            clipPath: isMobile ? "none" : "inset(10% 10% 10% 10% round 8px)"
           },
           animate: { 
             opacity: 0.85, 
             scale: 0.95, 
             x: backX, 
             rotate: -6,
-            clipPath: "inset(0% 0% 0% 0% round 8px)",
+            clipPath: isMobile ? "none" : "inset(0% 0% 0% 0% round 8px)",
             transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] }
           },
           exit: { 
@@ -147,7 +147,7 @@ function ImageStackPreview({ service, isMobile }: ImageStackPreviewProps) {
             scale: 0.85, 
             x: isMobile ? -14 : -20, 
             rotate: -15,
-            clipPath: "inset(10% 10% 10% 10% round 8px)",
+            clipPath: isMobile ? "none" : "inset(10% 10% 10% 10% round 8px)",
             transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] }
           }
         }}
@@ -173,14 +173,14 @@ function ImageStackPreview({ service, isMobile }: ImageStackPreviewProps) {
             scale: 0.85, 
             x: isMobile ? 14 : 20, 
             rotate: 15,
-            clipPath: "inset(10% 10% 10% 10% round 8px)"
+            clipPath: isMobile ? "none" : "inset(10% 10% 10% 10% round 8px)"
           },
           animate: { 
             opacity: 1, 
             scale: 1, 
             x: frontX, 
             rotate: 6,
-            clipPath: "inset(0% 0% 0% 0% round 8px)",
+            clipPath: isMobile ? "none" : "inset(0% 0% 0% 0% round 8px)",
             transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: 0.04 }
           },
           exit: { 
@@ -188,7 +188,7 @@ function ImageStackPreview({ service, isMobile }: ImageStackPreviewProps) {
             scale: 0.85, 
             x: isMobile ? 14 : 20, 
             rotate: 15,
-            clipPath: "inset(10% 10% 10% 10% round 8px)",
+            clipPath: isMobile ? "none" : "inset(10% 10% 10% 10% round 8px)",
             transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] }
           }
         }}
@@ -424,7 +424,7 @@ export default function Services() {
                     </div>
 
                     {/* Description */}
-                    <div className={`font-sans text-[12px] md:text-[15px] font-light leading-relaxed mt-2 md:mt-4 transition-colors duration-300 ${descColorClass}`}>
+                    <div className={`font-kyiv-sans text-[12px] md:text-[15px] font-light leading-relaxed mt-2 md:mt-4 transition-colors duration-300 ${descColorClass}`}>
                       {service.description}
                     </div>
                   </div>

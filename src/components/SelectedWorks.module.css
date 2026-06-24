@@ -5,7 +5,7 @@
 .section {
   width: 100%;
   background-color: #F8F8FA;
-  padding: 96px 0 160px;
+  padding: 96px 10px 10px;
   overflow: hidden;
 }
 
@@ -31,6 +31,12 @@
 }
 
 @media (max-width: 809px) {
+  .section {
+    padding: 48px 0 10px;
+  }
+  .container {
+    gap: 32px;
+  }
   .top {
     flex-direction: column;
     align-items: flex-start;
@@ -110,6 +116,12 @@
   }
 }
 
+@media (max-width: 809px) {
+  .workCard {
+    min-height: auto;
+  }
+}
+
 /* BG image fills card absolutely */
 .bgImageWrap {
   position: absolute;
@@ -174,8 +186,9 @@
 @media (max-width: 809px) {
   .innerContainer {
     flex-direction: column;
-    padding: 28px 24px;
-    gap: 24px;
+    padding: 20px 20px;
+    gap: 16px;
+    min-height: auto;
   }
 }
 
@@ -198,7 +211,8 @@
 @media (max-width: 809px) {
   .leftCol {
     flex: none;
-    gap: 20px;
+    gap: 12px;
+    justify-content: flex-start;
   }
 }
 
@@ -256,6 +270,12 @@
   letter-spacing: -0.03em;
   color: rgb(255, 255, 255);
   margin: 0;
+}
+
+@media (max-width: 809px) {
+  .clientName {
+    font-size: clamp(38px, 8vw, 52px);
+  }
 }
 
 .clientNameSpan {
@@ -354,6 +374,14 @@
 @media (min-width: 1440px) {
   .statsPanel {
     flex: 0 0 200px;
+  }
+}
+
+@media (max-width: 809px) {
+  .statsPanel {
+    justify-content: flex-start;
+    gap: 12px;
+    flex: none;
   }
 }
 

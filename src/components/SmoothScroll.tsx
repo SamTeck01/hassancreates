@@ -5,6 +5,11 @@ import Lenis from "lenis";
 
 export default function SmoothScroll() {
   useEffect(() => {
+    // Disable smooth scrolling on mobile/touch devices for smooth native momentum scroll
+    if (window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 810) {
+      return;
+    }
+
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),

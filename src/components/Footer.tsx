@@ -90,7 +90,7 @@ export default function Footer() {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-8 md:gap-12 text-left">
             {/* Column 1: Navigation */}
             <div className="flex flex-col items-start">
-              <span className="text-[11px] uppercase tracking-[0.2em] text-white/40 font-kyiv font-semibold mb-6 select-none">
+              <span className="text-[11px] uppercase tracking-[0.2em] text-white/40 font-kyiv-sans font-semibold mb-6 select-none">
                 Navigation
               </span>
               <div className="flex flex-col gap-4">
@@ -114,7 +114,7 @@ export default function Footer() {
 
             {/* Column 2: Social */}
             <div className="flex flex-col items-start">
-              <span className="text-[11px] uppercase tracking-[0.2em] text-white/40 font-kyiv font-semibold mb-6 select-none">
+              <span className="text-[11px] uppercase tracking-[0.2em] text-white/40 font-kyiv-sans font-semibold mb-6 select-none">
                 Social
               </span>
               <div className="flex flex-col gap-4">
@@ -139,7 +139,7 @@ export default function Footer() {
 
             {/* Column 3: Legals */}
             <div className="flex flex-col items-start col-span-2 md:col-span-1">
-              <span className="text-[11px] uppercase tracking-[0.2em] text-white/40 font-kyiv font-semibold mb-6 select-none">
+              <span className="text-[11px] uppercase tracking-[0.2em] text-white/40 font-kyiv-sans font-semibold mb-6 select-none">
                 Legals
               </span>
               <div className="flex flex-col gap-4">
@@ -180,7 +180,7 @@ export default function Footer() {
           </div>
 
           {/* Giant Bottom Wordmark */}
-          <div className="w-full text-center relative overflow-hidden select-none mt-10 z-10">
+          <div className="w-full text-center relative overflow-hidden select-none mt-5 z-10">
             <h1 className="font-kyiv text-[clamp(60px,16vw,190px)] font-bold leading-none text-white tracking-[-0.04em]">
               <StaggeredText
                 text="HassanCreates"
@@ -198,7 +198,7 @@ export default function Footer() {
 
         {/* Progressive Blur Layer */}
         <div
-          className="absolute bottom-0 left-0 right-0 h-4 pointer-events-none z-20"
+          className="absolute bottom-0 left-0 right-0 h-2 pointer-events-none z-20"
           style={{
             backdropFilter: "blur(4px)",
             backgroundColor: "rgba(220, 220, 220, 0.01)",

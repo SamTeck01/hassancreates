@@ -6,7 +6,7 @@ import Image from "next/image";
 
 export default function MosaicGrid() {
   return (
-    <section className="w-full bg-white flex justify-center py-6 px-1 md:px-3">
+    <section className="w-full bg-white flex justify-center pb-6 pt-0 px-1 md:px-3">
       <motion.div
         className="framer-1ax210z w-full max-w-[1400px] overflow-hidden rounded-[24px] aspect-[2848/1604] relative"
         data-framer-name="Banner Image"

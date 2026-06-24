@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { motion, useScroll, useTransform, useMotionTemplate } from "framer-motion";
 import styles from "./SelectedWorks.module.css";
 
@@ -75,9 +75,11 @@ type Project = (typeof PROJECTS)[number];
 function WorkCard({
   project,
   isLast,
+  isMobile,
 }: {
   project: Project;
   isLast: boolean;
+  isMobile: boolean;
 }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -100,14 +102,15 @@ function WorkCard({
       id={project.id}
       className={styles.cardWrapper}
       style={{
-        top: project.stickyTop,
+        top: isMobile ? 64 : project.stickyTop,
+        position: "sticky",
         zIndex: project.zIndex,
         scale:   isLast ? 1 : scale,
         opacity: isLast ? 1 : opacity,
         rotate:  isLast ? 0 : rotate,
-        filter:  isLast ? "blur(0px)" : filter,
-        // 60vh of scroll space for the full exit animation
-        marginBottom: isLast ? 0 : "60vh",
+        filter:  isMobile || isLast ? "none" : filter,
+        // 60vh of scroll space for the full exit animation on desktop; tighter 40vh on mobile
+        marginBottom: isLast ? 0 : (isMobile ? "10vh" : "20vh"),
         transformOrigin: "center center",
       }}
     >
@@ -254,9 +257,18 @@ function WorkCard({
 }
 
 export default function SelectedWorks() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 810);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   return (
     /* framer-s0bx2r */
-    <section className={styles.section} data-framer-name="Works-Section">
+    <section id="works" className={styles.section} data-framer-name="Works-Section">
       {/* framer-3u9vmd */}
       <div className={styles.container} data-framer-name="Container">
 
@@ -280,6 +292,7 @@ export default function SelectedWorks() {
               key={project.id}
               project={project}
               isLast={index === PROJECTS.length - 1}
+              isMobile={isMobile}
             />
           ))}
         </div>
