@@ -1,85 +1,24 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
-import { motion, useScroll, useTransform, useMotionTemplate } from "framer-motion";
-import styles from "./SelectedWorks.module.css";
+import { motion, useScroll, useTransform, useMotionTemplate, AnimatePresence } from "framer-motion";
+import PhotoViewer from "./PhotoViewer";
+import { Project } from "@/types";
+import { PROJECTS_DATA } from "@/data/projects";
 
 const NOISE_IMG =
   "https://framerusercontent.com/images/hiGYz6grmhAHSeZuNKHEuchTGTw.png";
-
-const PROJECTS = [
-  {
-    id: "sticky-trigger-01",
-    stickyTop: 80,
-    zIndex: 10,
-    bgImage: "https://framerusercontent.com/images/x3RMizQqFhQ9G8jF5dqqcbxY8M.png",
-    bgSrcSet:
-      "https://framerusercontent.com/images/x3RMizQqFhQ9G8jF5dqqcbxY8M.png?scale-down-to=512 512w,https://framerusercontent.com/images/x3RMizQqFhQ9G8jF5dqqcbxY8M.png?scale-down-to=1024 1024w,https://framerusercontent.com/images/x3RMizQqFhQ9G8jF5dqqcbxY8M.png?scale-down-to=2048 2048w,https://framerusercontent.com/images/x3RMizQqFhQ9G8jF5dqqcbxY8M.png 2848w",
-    description:
-      "We've helped businesses across industries achieve their goals. Here are some of our selected works.",
-    number: "01",
-    clientName: "Archin",
-    href: "./works/archin",
-    coverImage:
-      "https://framerusercontent.com/images/olR1jd1vAg59BKYSorw26ZNxY.png",
-    coverSrcSet:
-      "https://framerusercontent.com/images/olR1jd1vAg59BKYSorw26ZNxY.png?scale-down-to=1024 819w,https://framerusercontent.com/images/olR1jd1vAg59BKYSorw26ZNxY.png 912w",
-    year: "2025",
-    role: "Lead Designer",
-    services: ["Website Design", "Product Design", "Branding", "Development"],
-  },
-  {
-    id: "sticky-trigger-02",
-    stickyTop: 96,
-    zIndex: 11,
-    bgImage: "https://framerusercontent.com/images/MHwFX5PK3mWp7JJNseH8110qdg.png",
-    bgSrcSet:
-      "https://framerusercontent.com/images/MHwFX5PK3mWp7JJNseH8110qdg.png?scale-down-to=512 512w,https://framerusercontent.com/images/MHwFX5PK3mWp7JJNseH8110qdg.png?scale-down-to=1024 1024w,https://framerusercontent.com/images/MHwFX5PK3mWp7JJNseH8110qdg.png?scale-down-to=2048 2048w,https://framerusercontent.com/images/MHwFX5PK3mWp7JJNseH8110qdg.png 2848w",
-    description:
-      "We've partnered with businesses across various industries to help them achieve their goals.",
-    number: "02",
-    clientName: "VNTNR",
-    href: "./works/vntnr",
-    coverImage:
-      "https://framerusercontent.com/images/QhPkJGJBXS8kPS7IhPj7ZBGZpII.png",
-    coverSrcSet:
-      "https://framerusercontent.com/images/QhPkJGJBXS8kPS7IhPj7ZBGZpII.png?scale-down-to=1024 819w,https://framerusercontent.com/images/QhPkJGJBXS8kPS7IhPj7ZBGZpII.png 912w",
-    year: "2018",
-    role: "Logo Designer",
-    services: ["Designing", "Branding", "Redesigning", "Development"],
-  },
-  {
-    id: "sticky-trigger-03",
-    stickyTop: 112,
-    zIndex: 12,
-    bgImage: "https://framerusercontent.com/images/jXErNhJ75aLqKEeFiIYT76adrM8.png",
-    bgSrcSet:
-      "https://framerusercontent.com/images/jXErNhJ75aLqKEeFiIYT76adrM8.png?scale-down-to=512 512w,https://framerusercontent.com/images/jXErNhJ75aLqKEeFiIYT76adrM8.png?scale-down-to=1024 1024w,https://framerusercontent.com/images/jXErNhJ75aLqKEeFiIYT76adrM8.png?scale-down-to=2048 2048w,https://framerusercontent.com/images/jXErNhJ75aLqKEeFiIYT76adrM8.png 2848w",
-    description:
-      "We've collaborated with companies from diverse sectors to turn their visions into reality. Here's a look at some of our featured work.",
-    number: "03",
-    clientName: "Aeorim",
-    href: "./works/aeorim",
-    coverImage:
-      "https://framerusercontent.com/images/yOPV9nZRSJXmNPqyeWfZSThWAc.png",
-    coverSrcSet:
-      "https://framerusercontent.com/images/yOPV9nZRSJXmNPqyeWfZSThWAc.png?scale-down-to=1024 819w,https://framerusercontent.com/images/yOPV9nZRSJXmNPqyeWfZSThWAc.png 912w",
-    year: "2023",
-    role: "Website Designer",
-    services: ["Branding", "Revamp", "Development", "Designing"],
-  },
-] as const;
-
-type Project = (typeof PROJECTS)[number];
 
 function WorkCard({
   project,
   isLast,
   isMobile,
+  onSelect,
 }: {
-  project: Project;
+  project: Project & { stickyTop: number; zIndex: number };
   isLast: boolean;
   isMobile: boolean;
+  onSelect: (projectId: string) => void;
 }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -100,7 +39,7 @@ function WorkCard({
     <motion.div
       ref={wrapperRef}
       id={project.id}
-      className={styles.cardWrapper}
+      className="cardWrapper sticky w-full will-change-transform max-[809px]:!filter-none"
       style={{
         top: isMobile ? 64 : project.stickyTop,
         position: "sticky",
@@ -115,12 +54,12 @@ function WorkCard({
       }}
     >
       {/* framer-AJQo7 framer-v-1ba6yrb */}
-      <div className={styles.cardOuter}>
+      <div className="w-full rounded-[32px]">
         {/* framer-148g6gm */}
-        <div className={styles.workCard}>
+        <div className="workCard relative rounded-[32px] overflow-hidden w-full min-h-[560px] flex flex-col min-[1440px]:min-h-[680px] max-[809px]:min-h-0">
 
           {/* BG image — absolute fill */}
-          <div className={styles.bgImageWrap}>
+          <div className="absolute inset-0 rounded-[inherit] z-0 overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               decoding="auto"
@@ -130,12 +69,12 @@ function WorkCard({
               srcSet={project.bgSrcSet}
               src={project.bgImage}
               alt="BG Image"
-              className={styles.bgImage}
+              className="block w-full h-full rounded-[inherit] object-cover object-center blur-[28px] scale-[1.1]"
             />
           </div>
 
           {/* Noise overlay — framer-z3ltis */}
-          <div className={styles.noiseOverlay}>
+          <div className="absolute inset-0 rounded-[inherit] opacity-[0.18] pointer-events-none z-[1]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               decoding="auto"
@@ -144,42 +83,46 @@ function WorkCard({
               src={NOISE_IMG}
               alt=""
               aria-hidden="true"
-              className={styles.noiseImage}
+              className="block w-full h-full rounded-[inherit] object-fill"
             />
           </div>
 
           {/* Blur overlay — framer-1w7zods */}
-          <div className={styles.blurOverlay} />
+          <div className="absolute inset-0 rounded-[inherit] bg-[#0c0c0c]/40 z-[2] pointer-events-none" />
 
           {/* Inner content — framer-165nn3j */}
-          <div className={styles.innerContainer}>
+          <div className="relative z-[3] flex flex-row items-stretch flex-1 w-full p-10 gap-8 box-border min-h-[inherit] max-[809px]:flex-col max-[809px]:p-5 max-[809px]:gap-4 max-[809px]:min-h-0">
 
             {/* LEFT — framer-1mzphu2 */}
-            <div className={styles.leftCol}>
+            <div className="flex flex-col justify-between shrink-0 basis-[280px] min-w-0 gap-8 min-[1440px]:basis-[360px] max-[809px]:flex-none max-[809px]:gap-3 max-[809px]:justify-start">
 
               {/* Content — framer-9niauw / framer-16geo85 */}
-              <div className={styles.contentBlock}>
-                <p className={styles.descriptionText}>
+              <div className="flex">
+                <p className="font-kyiv-sans text-[13px] font-normal leading-[1.6] text-white/64 m-0">
                   {project.description}
                 </p>
               </div>
 
               {/* Brand — framer-1pir4kz */}
-              <div className={styles.brandBlock}>
+              <div 
+                className="flex flex-col gap-3"
+                onClick={() => onSelect(project.id)}
+                style={{ cursor: "pointer" }}
+              >
 
                 {/* Counter row — framer-r999pn */}
-                <div className={styles.dateRow}>
+                <div className="flex flex-row items-center gap-0.5 pb-3 border-b border-white/20">
                   {/* framer-k15jqr */}
-                  <p className={styles.dateNumber}>{project.number}</p>
+                  <p className="font-kyiv-sans text-[13px] font-normal text-white m-0">{project.number}</p>
                   {/* framer-1eo6faf */}
-                  <p className={styles.dateSeparator}>&nbsp;/ 03</p>
+                  <p className="font-kyiv-sans text-[13px] font-normal text-white/64 m-0">&nbsp;/ 03</p>
                 </div>
 
                 {/* Client name h2 — framer-mtdgxz / framer-styles-preset-13pym41 */}
-                <h2 className={styles.clientName}>
-                  <span className={styles.clientNameSpan}>
+                <h2 className="font-kyiv text-[clamp(64px,9vw,130px)] font-normal leading-[0.95] tracking-[-0.03em] text-white m-0 max-[809px]:text-[clamp(38px,8vw,52px)]">
+                  <span className="whitespace-nowrap">
                     {project.clientName.split("").map((char, i) => (
-                      <span key={i} className={styles.clientNameChar}>
+                      <span key={i} className="inline-block opacity-100 transform-none will-change-transform">
                         {char}
                       </span>
                     ))}
@@ -189,18 +132,22 @@ function WorkCard({
             </div>
 
             {/* RIGHT — framer-90jchk */}
-            <div className={styles.rightCol}>
+            <div className="flex flex-row items-stretch flex-1 gap-6 justify-end min-w-0 max-[809px]:gap-4 max-[809px]:justify-start">
 
               {/* Cover image link — framer-137fg67 framer-5st3ch */}
               <a
                 href={project.href}
-                className={styles.coverLink}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onSelect(project.id);
+                }}
+                className="block relative rounded-[24px] overflow-hidden shrink-0 w-[300px] border border-[#0c0c0c]/82 no-underline self-stretch min-[1440px]:w-[456px] max-[809px]:w-[160px] max-[809px]:shrink-0"
                 aria-label={`View ${project.clientName} project`}
               >
                 {/* Inner border highlight — framer-cy9ysw */}
-                <div className={styles.coverBorder} />
+                <div className="absolute inset-0 rounded-[24px] border border-white/10 z-[1] pointer-events-none" />
                 {/* Image fill — framer-1a1qf3u */}
-                <div className={styles.coverImageWrap}>
+                <div className="absolute inset-0 rounded-[24px]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     decoding="auto"
@@ -210,39 +157,39 @@ function WorkCard({
                     srcSet={project.coverSrcSet}
                     src={project.coverImage}
                     alt="Cover Image"
-                    className={styles.coverImage}
+                    className="block w-full h-full rounded-[inherit] object-cover object-center"
                   />
                 </div>
               </a>
 
               {/* Stats panel — framer-5i263h */}
-              <div className={styles.statsPanel}>
+              <div className="flex flex-col justify-between gap-6 shrink-0 basis-[160px] min-w-0 min-[1440px]:basis-[200px] max-[809px]:justify-start max-[809px]:gap-3 max-[809px]:flex-none">
 
                 {/* Top stats — framer-rwuc2c */}
-                <div className={styles.statsTop}>
+                <div className="flex flex-col gap-7">
                   {/* Year — framer-1dvkm6c */}
-                  <div className={styles.statBlock}>
+                  <div className="flex flex-col gap-1.5">
                     {/* framer-gpmcii */}
-                    <p className={styles.statLabel}>Year</p>
+                    <p className="font-kyiv-sans text-[12px] font-normal text-white/64 m-0">Year</p>
                     {/* framer-1ye5dlq / framer-styles-preset-13e92k5 */}
-                    <p className={styles.statValue}>{project.year}</p>
+                    <p className="font-kyiv-sans text-[15px] font-medium text-white m-0">{project.year}</p>
                   </div>
                   {/* Role — framer-25oos7 */}
-                  <div className={styles.statBlock}>
+                  <div className="flex flex-col gap-1.5">
                     {/* framer-6pp3pc */}
-                    <p className={styles.statLabel}>Role</p>
+                    <p className="font-kyiv-sans text-[12px] font-normal text-white/64 m-0">Role</p>
                     {/* framer-x4df5s */}
-                    <p className={styles.statValue}>{project.role}</p>
+                    <p className="font-kyiv-sans text-[15px] font-medium text-white m-0">{project.role}</p>
                   </div>
                 </div>
 
                 {/* Services — framer-15okfae */}
-                <div className={styles.servicesBlock}>
+                <div className="flex flex-col gap-1.5">
                   {/* framer-10fme74 */}
-                  <p className={styles.servicesLabel}>Services</p>
+                  <p className="font-kyiv-sans text-[12px] font-normal text-white/64 mb-1">Services</p>
                   {/* framer-1tfezv5 / framer-dzuyjn / framer-1ny8fgc / framer-12n5dvj */}
                   {project.services.map((srv) => (
-                    <p key={srv} className={styles.serviceItem}>
+                    <p key={srv} className="font-kyiv-sans text-[13px] font-normal leading-[1.4] text-white m-0">
                       {srv}
                     </p>
                   ))}
@@ -258,6 +205,8 @@ function WorkCard({
 
 export default function SelectedWorks() {
   const [isMobile, setIsMobile] = useState(false);
+  const [projects, setProjects] = useState<Project[]>(PROJECTS_DATA);
+  const [activePhotoProject, setActivePhotoProject] = useState<string | null>(null);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 810);
@@ -266,37 +215,69 @@ export default function SelectedWorks() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  useEffect(() => {
+    // Dynamic fetch from Next.js API Route handler
+    fetch("/api/projects")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setProjects(data);
+        }
+      })
+      .catch((err) => console.error("Failed to load projects from API:", err));
+  }, []);
+
   return (
     /* framer-s0bx2r */
-    <section id="works" className={styles.section} data-framer-name="Works-Section">
-      {/* framer-3u9vmd */}
-      <div className={styles.container} data-framer-name="Container">
+    <>
+      <section id="works" className="w-full bg-white pt-24 px-2.5 pb-2.5 overflow-hidden max-[809px]:pt-12 max-[809px]:px-0" data-framer-name="Works-Section">
+        {/* framer-3u9vmd */}
+        <div className="w-[calc(min(100vw,1920px)-16px)] mx-auto flex flex-col gap-14 max-[809px]:gap-8" data-framer-name="Container">
 
-        {/* framer-c6tfrg — flex-row: label left, heading right */}
-        <div className={styles.top} data-framer-name="Top">
-          {/* framer-1u53hr0 */}
-          <p className={styles.label}>(Recent Works)</p>
+          {/* framer-c6tfrg — flex-row: label left, heading right */}
+          <div className="flex flex-col items-center gap-2.5 w-full max-w-[1080px] mx-auto px-4 box-border max-[809px]:items-start max-[809px]:gap-2 max-[809px]:px-6" data-framer-name="Top">
+            {/* framer-1u53hr0 */}
+            <p className="font-kyiv-sans text-[14px] font-normal leading-normal text-[#5c5c5c] m-0 shrink-0">(Recent Works)</p>
 
-          {/* framer-1raj7xj */}
-          <div className={styles.headingBox} data-framer-name="Heading">
-            {/* framer-1df4roe / framer-benisz */}
-            {/* framer-styles-preset-nv8ngd with data-text-fill gradient */}
-            <h2 className={styles.headingText}>Recent Works</h2>
+            {/* framer-1raj7xj */}
+            <div className="flex items-end" data-framer-name="Heading">
+              {/* framer-1df4roe / framer-benisz */}
+              {/* framer-styles-preset-nv8ngd with data-text-fill gradient */}
+              <h2 className="font-kyiv text-[clamp(48px,5.5vw,80px)] font-normal leading-none tracking-[-0.02em] m-0 bg-clip-text text-transparent bg-gradient-to-b from-[#0c0c0c]/82 to-[#0c0c0c]/50">Recent Works</h2>
+            </div>
+          </div>
+
+          {/* framer-oh5ifz */}
+          <div className="flex flex-col relative" data-framer-name="Bottom">
+            {projects.map((project, index) => {
+              const layoutProject = {
+                ...project,
+                stickyTop: 80 + index * 16,
+                zIndex: 10 + index,
+              };
+
+              return (
+                <WorkCard
+                  key={project.id}
+                  project={layoutProject}
+                  isLast={index === projects.length - 1}
+                  isMobile={isMobile}
+                  onSelect={setActivePhotoProject}
+                />
+              );
+            })}
           </div>
         </div>
+      </section>
 
-        {/* framer-oh5ifz */}
-        <div className={styles.bottom} data-framer-name="Bottom">
-          {PROJECTS.map((project, index) => (
-            <WorkCard
-              key={project.id}
-              project={project}
-              isLast={index === PROJECTS.length - 1}
-              isMobile={isMobile}
-            />
-          ))}
-        </div>
-      </div>
-    </section>
+      <AnimatePresence>
+        {activePhotoProject && (
+          <PhotoViewer
+            projectId={activePhotoProject}
+            onClose={() => setActivePhotoProject(null)}
+          />
+        )}
+      </AnimatePresence>
+    </>
   );
 }

@@ -4,78 +4,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useMotionTemplate } from "framer-motion";
 import StaggeredText from "./StaggeredText";
 
-/* ─────────────────────────────────────────────
-   TypeScript Types
-   ───────────────────────────────────────────── */
-interface ServiceItem {
-  id: string;
-  num: string;
-  title: string;
-  count: string;
-  description: string;
-  image1: string;
-  image2: string;
-}
-
-/* ─────────────────────────────────────────────
-   Service Data (Exactly matching reference screenshot)
-   ───────────────────────────────────────────── */
-const SERVICES: ServiceItem[] = [
-  {
-    id: "ui-ux",
-    num: "01",
-    title: "UI/UX Design",
-    count: "(4)",
-    description: "Creating clean, modern, and user-centered interfaces focused on usability, accessibility, and seamless user experience.",
-    image1: "/works/archin-1.jpg",
-    image2: "/works/archin-2.jpg",
-  },
-  {
-    id: "web-design",
-    num: "02",
-    title: "Website Design",
-    count: "(8)",
-    description: "Designing responsive and visually polished websites that reflect brand identity while improving engagement and conversion.",
-    image1: "/works/vntnr-1.jpg",
-    image2: "/works/vntnr-2.jpg",
-  },
-  {
-    id: "mobile-app",
-    num: "03",
-    title: "Mobile App Design",
-    count: "(4)",
-    description: "Crafting intuitive mobile app experiences with smooth navigation, consistent layouts, and user-friendly interactions.",
-    image1: "/works/solstice-1.jpg",
-    image2: "/works/solstice-2.jpg",
-  },
-  {
-    id: "wireframing",
-    num: "04",
-    title: "Wireframing & Prototyping",
-    count: "(7)",
-    description: "Transforming ideas into structured wireframes and interactive prototypes to visualize user flow before development.",
-    image1: "/works/blackopal-1.jpg",
-    image2: "/works/blackopal-2.jpg",
-  },
-  {
-    id: "design-systems",
-    num: "05",
-    title: "Design Systems",
-    count: "(3)",
-    description: "Building scalable design systems with reusable components, typography, spacing, and consistent visual guidelines.",
-    image1: "/works/amber-1.jpg",
-    image2: "/works/amber-2.jpg",
-  },
-  {
-    id: "user-research",
-    num: "06",
-    title: "User Research",
-    count: "(2)",
-    description: "Understanding user behavior, pain points, and goals to create more effective and meaningful product experiences.",
-    image1: "/works/apex-1.jpg",
-    image2: "/works/apex-2.jpg",
-  },
-];
+import { Service } from "@/types";
+import { SERVICES_DATA } from "@/data/services";
 
 /* ─────────────────────────────────────────────
    Arrow Icon Component (↗)
@@ -102,7 +32,7 @@ function ArrowIcon({ className }: ArrowIconProps) {
 }
 
 interface ImageStackPreviewProps {
-  service: ServiceItem;
+  service: Service;
   isMobile: boolean;
 }
 
@@ -214,7 +144,7 @@ function ImageStackPreview({ service, isMobile }: ImageStackPreviewProps) {
    ───────────────────────────────────────────── */
 interface RowPreviewContainerProps {
   isActive: boolean;
-  service: ServiceItem;
+  service: Service;
   isMobile: boolean;
 }
 
@@ -283,6 +213,7 @@ function RowPreviewContainer({ isActive, service, isMobile }: RowPreviewContaine
    ───────────────────────────────────────────── */
 export default function Services() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [services, setServices] = useState<Service[]>(SERVICES_DATA);
   const [isMobile, setIsMobile] = useState(false);
   const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
@@ -323,6 +254,18 @@ export default function Services() {
     return () => {
       observer.disconnect();
     };
+  }, [services]); // Re-run observer if services change dynamically
+
+  useEffect(() => {
+    // Dynamic fetch from Next.js API Route handler
+    fetch("/api/services")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setServices(data);
+        }
+      })
+      .catch((err) => console.error("Failed to load services from API:", err));
   }, []);
 
   // Click behavior transitions active state and scrolls views into center
@@ -373,7 +316,7 @@ export default function Services() {
 
         {/* Services Showcase typographic rows */}
         <div className="flex flex-col border-b border-[#E3E3E8] relative z-10 w-full">
-          {SERVICES.map((service, index) => {
+          {services.map((service, index) => {
             const isActive = activeIndex === index;
             
             // Animated color classes

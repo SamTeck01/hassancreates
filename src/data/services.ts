@@ -1,0 +1,58 @@
+import { Service } from "@/types";
+
+export const SERVICES_DATA: Service[] = [
+  {
+    id: "ui-ux",
+    num: "01",
+    title: "UI/UX Design",
+    count: "(4)",
+    description: "Creating clean, modern, and user-centered interfaces focused on usability, accessibility, and seamless user experience.",
+    image1: "/works/archin-1.jpg",
+    image2: "/works/archin-2.jpg",
+  },
+  {
+    id: "web-design",
+    num: "02",
+    title: "Website Design",
+    count: "(8)",
+    description: "Designing responsive and visually polished websites that reflect brand identity while improving engagement and conversion.",
+    image1: "/works/vntnr-1.jpg",
+    image2: "/works/vntnr-2.jpg",
+  },
+  {
+    id: "mobile-app",
+    num: "03",
+    title: "Mobile App Design",
+    count: "(4)",
+    description: "Crafting intuitive mobile app experiences with smooth navigation, consistent layouts, and user-friendly interactions.",
+    image1: "/works/solstice-1.jpg",
+    image2: "/works/solstice-2.jpg",
+  },
+  {
+    id: "wireframing",
+    num: "04",
+    title: "Wireframing & Prototyping",
+    count: "(7)",
+    description: "Transforming ideas into structured wireframes and interactive prototypes to visualize user flow before development.",
+    image1: "/works/blackopal-1.jpg",
+    image2: "/works/blackopal-2.jpg",
+  },
+  {
+    id: "design-systems",
+    num: "05",
+    title: "Design Systems",
+    count: "(3)",
+    description: "Building scalable design systems with reusable components, typography, spacing, and consistent visual guidelines.",
+    image1: "/works/amber-1.jpg",
+    image2: "/works/amber-2.jpg",
+  },
+  {
+    id: "user-research",
+    num: "06",
+    title: "User Research",
+    count: "(2)",
+    description: "Understanding user behavior, pain points, and goals to create more effective and meaningful product experiences.",
+    image1: "/works/apex-1.jpg",
+    image2: "/works/apex-2.jpg",
+  },
+];

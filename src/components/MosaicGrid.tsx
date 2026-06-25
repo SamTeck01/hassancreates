@@ -21,13 +21,12 @@ export default function MosaicGrid() {
             style={{
               position: "absolute",
               borderRadius: "inherit",
-              // @ts-ignore
-              cornerShape: "inherit",
               top: 0,
               right: 0,
               bottom: 0,
               left: 0,
-            }}
+              cornerShape: "inherit",
+            } as React.CSSProperties & { cornerShape?: string }}
             data-framer-background-image-wrapper="true"
           >
             <Image
@@ -41,11 +40,10 @@ export default function MosaicGrid() {
                 width: "100%",
                 height: "100%",
                 borderRadius: "inherit",
-                // @ts-ignore
-                cornerShape: "inherit",
                 objectPosition: "center",
                 objectFit: "cover",
-              }}
+                cornerShape: "inherit",
+              } as React.CSSProperties & { cornerShape?: string }}
               priority
             />
           </div>

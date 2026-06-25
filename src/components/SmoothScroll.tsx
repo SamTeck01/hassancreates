@@ -15,6 +15,7 @@ export default function SmoothScroll() {
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       wheelMultiplier: 0.85,
     });
+    (window as any).lenis = lenis;
     
     let raf = 0;
     const loop = (time: number) => {
@@ -26,6 +27,7 @@ export default function SmoothScroll() {
     return () => {
       cancelAnimationFrame(raf);
       lenis.destroy();
+      delete (window as any).lenis;
     };
   }, []);
   
