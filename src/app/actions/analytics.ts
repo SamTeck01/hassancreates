@@ -1,16 +1,19 @@
 "use server";
 
-import crypto from "crypto";
 import { db } from "@/lib/db";
 import { visitors } from "@/lib/db/schema";
 import { eq, desc } from "drizzle-orm";
 
+async function sha256(message: string): Promise<string> {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 export async function trackVisitor(ip: string, country?: string | null, city?: string | null) {
   // 1. Hash the IP using SHA-256 (preserves privacy, raw IP is never stored)
-  const hash = crypto
-    .createHash("sha256")
-    .update(ip)
-    .digest("hex");
+  const hash = await sha256(ip);
 
   try {
     // 2. Check if already recorded in the database

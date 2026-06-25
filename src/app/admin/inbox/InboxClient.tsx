@@ -3,36 +3,17 @@
 import { useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Message01Icon, Mail01Icon, UserIcon, Tick01Icon, Delete01Icon } from "@hugeicons/core-free-icons";
+import { deleteMessage, toggleMessageRead } from "@/app/actions/messages";
 
-const MOCK_MESSAGES = [
-  {
-    id: 1,
-    name: "Elena Rostova",
-    email: "elena@rostova.design",
-    subject: "Branding Collaboration Request",
-    message: "Hi Hassan! I followed your work on Archin, and the geometric layout was incredibly inspiring. I'd love to discuss a potential partnership on a new branding project for a high-end architectural firm in Stockholm.",
-    receivedAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-    read: false,
-  },
-  {
-    id: 2,
-    name: "Marcus Sterling",
-    email: "m.sterling@capital-tech.com",
-    subject: "Freelance UI Development (Next.js)",
-    message: "Hey Hassan, We are seeking a freelance front-end developer/designer to support the revamp of our SaaS landing page. It needs the kind of micro-interactions and smooth scroll performance you've showcased. Do you have availability for a 3-month contract starting next month?",
-    receivedAt: new Date(Date.now() - 3600000 * 18).toISOString(),
-    read: false,
-  },
-  {
-    id: 3,
-    name: "Liam O'Connor",
-    email: "liam@oconnor-group.ie",
-    subject: "Service Inquiry — Webflow Redesign",
-    message: "Hello, we are looking to migrate our marketing site from WordPress to Webflow or Next.js. We need a high-performance, beautifully interactive digital storefront. Please send your rates and package options.",
-    receivedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-    read: true,
-  },
-];
+interface DBMessage {
+  id: number;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  receivedAt: string;
+  read: boolean;
+}
 
 function formatDate(dateInput: string) {
   const date = new Date(dateInput);
@@ -50,24 +31,35 @@ function formatDate(dateInput: string) {
   return `${date.toLocaleDateString("en-US", { month: "short" })} ${date.getDate()}, ${t}`;
 }
 
-export default function InboxClient() {
-  const [messages, setMessages] = useState(MOCK_MESSAGES);
-  const [selected, setSelected] = useState<typeof MOCK_MESSAGES[0] | null>(null);
+export default function InboxClient({ initialMessages = [] }: { initialMessages?: DBMessage[] }) {
+  const [messages, setMessages] = useState<DBMessage[]>(initialMessages);
+  const [selected, setSelected] = useState<DBMessage | null>(null);
   const unread = messages.filter((m) => !m.read).length;
 
-  const openMsg = (msg: typeof MOCK_MESSAGES[0]) => {
-    setSelected(msg);
-    if (!msg.read) setMessages((p) => p.map((m) => m.id === msg.id ? { ...m, read: true } : m));
+  const openMsg = async (msg: DBMessage) => {
+    setSelected({ ...msg, read: true });
+    if (!msg.read) {
+      setMessages((p) => p.map((m) => m.id === msg.id ? { ...m, read: true } : m));
+      await toggleMessageRead(msg.id, false);
+    }
   };
 
-  const delMsg = (id: number) => {
+  const delMsg = async (id: number) => {
     setMessages((p) => p.filter((m) => m.id !== id));
     if (selected?.id === id) setSelected(null);
+    await deleteMessage(id);
   };
 
-  const toggleRead = (id: number) => {
+  const toggleRead = async (id: number) => {
+    const msg = messages.find((m) => m.id === id);
+    if (!msg) return;
     setMessages((p) => p.map((m) => m.id === id ? { ...m, read: !m.read } : m));
+    if (selected?.id === id) {
+      setSelected((prev) => prev ? { ...prev, read: !prev.read } : null);
+    }
+    await toggleMessageRead(id, msg.read);
   };
+
 
   return (
     <div className="text-white">

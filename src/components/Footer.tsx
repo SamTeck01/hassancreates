@@ -60,7 +60,7 @@ export default function Footer() {
   };
 
   return (
-    <footer ref={ref} id="contact" className="w-full relative z-10 bg-brand-bg px-1 md:px-2 pb-1 pt-8 overflow-hidden select-none">
+    <footer ref={ref} className="w-full relative z-10 bg-brand-bg px-1 md:px-2 pb-1 pt-8 overflow-hidden select-none">
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -119,9 +119,8 @@ export default function Footer() {
               </span>
               <div className="flex flex-col gap-4">
                 {[
-                  { label: "Twitter(X)", href: "https://x.com" },
-                  { label: "LinkedIn", href: "https://linkedin.com" },
-                  { label: "Dribble", href: "https://dribbble.com" }
+                  { label: "LinkedIn", href: "https://linkedin.com/in/hassan-okesanjo-46a948353" },
+                  { label: "Behance", href: "https://behance.net/hassanokesanjo1" }
                 ].map((item) => (
                   <a
                     key={item.label}

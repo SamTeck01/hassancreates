@@ -1,4 +1,4 @@
-import { pgTable, text, jsonb, serial, real, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, jsonb, serial, real, timestamp, boolean } from "drizzle-orm/pg-core";
 
 export const projects = pgTable("projects", {
   id: text("id").primaryKey(),
@@ -35,3 +35,14 @@ export const visitors = pgTable("visitors", {
   city: text("city"),
   visited_at: timestamp("visited_at").defaultNow().notNull(),
 });
+
+export const messages = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  subject: text("subject").notNull(),
+  message: text("message").notNull(),
+  receivedAt: timestamp("received_at").defaultNow().notNull(),
+  read: boolean("read").default(false).notNull(),
+});
+

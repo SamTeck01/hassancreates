@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest, NextFetchEvent } from "next/server";
 import { trackVisitor } from "@/app/actions/analytics";
-import crypto from "crypto";
 
 // ── Rate Limiting Store (in-memory, resets on cold start) ────────────────────
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -36,8 +35,42 @@ function checkRateLimit(
   return { allowed: entry.count <= max, remaining };
 }
 
+// ── Web Crypto signing helper for Edge Runtime ───────────────────────────────
+async function hmacSha256(message: string, secret: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const keyBuffer = encoder.encode(secret);
+  const messageBuffer = encoder.encode(message);
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    keyBuffer,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    messageBuffer
+  );
+
+  const hashArray = Array.from(new Uint8Array(signature));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Timing-safe equal for strings (constant-time comparison in pure JS)
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
 // ── Session Token Validation ──────────────────────────────────────────────────
-function isValidSession(token: string, secret: string): boolean {
+async function isValidSession(token: string, secret: string): Promise<boolean> {
   // Token format: "admin:<expires>:<hmac-sig>"
   const parts = token.split(":");
   if (parts.length !== 3) return false;
@@ -49,22 +82,12 @@ function isValidSession(token: string, secret: string): boolean {
   if (isNaN(expires) || Date.now() > expires) return false;
 
   const payload = `admin:${expiresStr}`;
-  const expectedSig = crypto
-    .createHmac("sha256", secret)
-    .update(payload)
-    .digest("hex");
+  const expectedSig = await hmacSha256(payload, secret);
 
-  try {
-    const sigBuf = Buffer.from(sig, "hex");
-    const expectedBuf = Buffer.from(expectedSig, "hex");
-    if (sigBuf.length !== expectedBuf.length) return false;
-    return crypto.timingSafeEqual(sigBuf, expectedBuf);
-  } catch {
-    return false;
-  }
+  return timingSafeEqual(sig, expectedSig);
 }
 
-function isAdminAuthorized(request: NextRequest): boolean {
+async function isAdminAuthorized(request: NextRequest): Promise<boolean> {
   const sessionSecret = process.env.ADMIN_SESSION_SECRET;
 
   // If no session secret configured, allow access (unconfigured dev environment)
@@ -73,10 +96,10 @@ function isAdminAuthorized(request: NextRequest): boolean {
   const token = request.cookies.get("admin_session")?.value;
   if (!token) return false;
 
-  return isValidSession(token, sessionSecret);
+  return await isValidSession(token, sessionSecret);
 }
 
-export function proxy(request: NextRequest, event: NextFetchEvent) {
+export async function proxy(request: NextRequest, event: NextFetchEvent) {
   const { pathname } = request.nextUrl;
 
   // ── Visitor tracking on homepage ──────────────────────────────────────────
@@ -138,12 +161,12 @@ export function proxy(request: NextRequest, event: NextFetchEvent) {
 
   // ── Protect Admin Routes (redirect logged-in users from login page, others from dashboard) ──
   if (pathname === "/admin/login") {
-    if (isAdminAuthorized(request)) {
+    if (await isAdminAuthorized(request)) {
       const dashboardUrl = new URL("/admin", request.url);
       return NextResponse.redirect(dashboardUrl);
     }
   } else if (pathname.startsWith("/admin")) {
-    if (!isAdminAuthorized(request)) {
+    if (!(await isAdminAuthorized(request))) {
       const loginUrl = new URL("/admin/login", request.url);
       return NextResponse.redirect(loginUrl);
     }

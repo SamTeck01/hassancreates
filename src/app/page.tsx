@@ -10,6 +10,7 @@ import ClientLogos from "@/components/ClientLogos";
 import DoubleMarquee from "@/components/DoubleMarquee";
 import Services from "@/components/Services";
 import SelectedWorks from "@/components/SelectedWorks";
+import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import MenuOverlay from "@/components/MenuOverlay";
 
@@ -46,6 +47,9 @@ export default function Home() {
 
       {/* Selected Works Section */}
       <SelectedWorks />
+
+      {/* Contact Section */}
+      <Contact />
 
       {/* Footer Section */}
       <Footer />
