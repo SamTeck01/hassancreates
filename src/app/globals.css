@@ -147,11 +147,30 @@
   --foreground: #08070D;
 }
 
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;  /* IE/Edge */
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Webkit */
+}
+
 body {
   background-color: var(--background);
   color: var(--foreground);
-  overflow-x: hidden;
   min-height: 100vh;
+}
+
+/* Scroll Lock Helper */
+html.modal-open,
+body.modal-open {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
+  height: 100% !important;
 }
 
 /* ── Ambient cursor-follow orb ── */
@@ -209,34 +228,42 @@ body {
   filter: blur(90px);
 }
 
-/* Sleek custom scrollbars for a premium UI feel */
-::-webkit-scrollbar {
+/* Sleek custom scrollbars for inner scrollable areas */
+.custom-scrollbar::-webkit-scrollbar,
+.admin-scrollbar::-webkit-scrollbar,
+.fixed::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
-::-webkit-scrollbar-track {
+.custom-scrollbar::-webkit-scrollbar-track,
+.admin-scrollbar::-webkit-scrollbar-track,
+.fixed::-webkit-scrollbar-track {
   background: transparent;
 }
 
-::-webkit-scrollbar-thumb {
+.custom-scrollbar::-webkit-scrollbar-thumb,
+.admin-scrollbar::-webkit-scrollbar-thumb,
+.fixed::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.15);
   border-radius: 99px;
   transition: background-color 0.2s;
 }
 
-::-webkit-scrollbar-thumb:hover {
+.custom-scrollbar::-webkit-scrollbar-thumb:hover,
+.admin-scrollbar::-webkit-scrollbar-thumb:hover,
+.fixed::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.3);
 }
 
 /* Dark mode / Admin dashboard scrolling containers override */
-.fixed::-webkit-scrollbar-thumb,
-.admin-scrollbar::-webkit-scrollbar-thumb {
+.admin-scrollbar::-webkit-scrollbar-thumb,
+.fixed::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.12);
 }
 
-.fixed::-webkit-scrollbar-thumb:hover,
-.admin-scrollbar::-webkit-scrollbar-thumb:hover {
+.admin-scrollbar::-webkit-scrollbar-thumb:hover,
+.fixed::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.25);
 }
 

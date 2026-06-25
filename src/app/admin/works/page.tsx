@@ -31,8 +31,9 @@ export default async function WorksPage() {
       }
       dbProjects = await db.select().from(projects);
     }
+    dbProjects.sort((a, b) => a.number.localeCompare(b.number));
   } catch {
-    dbProjects = PROJECTS_DATA;
+    dbProjects = [...PROJECTS_DATA].sort((a, b) => a.number.localeCompare(b.number));
   }
 
   return <WorksClient initialProjects={dbProjects} />;

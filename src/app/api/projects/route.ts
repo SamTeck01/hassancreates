@@ -35,6 +35,8 @@ export async function GET() {
       dbProjects = await db.select().from(projects);
     }
 
+    dbProjects.sort((a: any, b: any) => a.number.localeCompare(b.number));
+
     return NextResponse.json(dbProjects);
   } catch (error) {
     console.error("Error querying Neon database, falling back to static data:", error);

@@ -92,14 +92,27 @@ function Modal({
 }) {
   useEffect(() => {
     if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.body.style.overflow = prev; };
+    document.body.classList.add("modal-open");
+    document.documentElement.classList.add("modal-open");
+
+    // Pause Lenis smooth scroll
+    if (typeof window !== "undefined" && (window as any).lenis) {
+      (window as any).lenis.stop();
+    }
+
+    return () => {
+      document.body.classList.remove("modal-open");
+      document.documentElement.classList.remove("modal-open");
+      // Resume Lenis smooth scroll
+      if (typeof window !== "undefined" && (window as any).lenis) {
+        (window as any).lenis.start();
+      }
+    };
   }, [open]);
 
   if (!open) return null;
   return (
-    <div onClick={onClose} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 overflow-hidden flex items-center justify-center p-4 sm:p-8">
+    <div onClick={onClose} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 overflow-hidden flex items-center justify-center p-4 sm:p-8" data-lenis-prevent>
       <div
         onClick={(e) => e.stopPropagation()}
         onWheel={(e) => e.stopPropagation()}

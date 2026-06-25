@@ -134,33 +134,45 @@ function WorkCard({
             {/* RIGHT — framer-90jchk */}
             <div className="flex flex-row items-stretch flex-1 gap-6 justify-end min-w-0 max-[809px]:gap-4 max-[809px]:justify-start">
 
-              {/* Cover image link — framer-137fg67 framer-5st3ch */}
-              <a
-                href={project.href}
-                onClick={(e) => {
-                  e.preventDefault();
-                  onSelect(project.id);
-                }}
-                className="block relative rounded-[24px] overflow-hidden shrink-0 w-[300px] border border-[#0c0c0c]/82 no-underline self-stretch min-[1440px]:w-[456px] max-[809px]:w-[160px] max-[809px]:shrink-0"
-                aria-label={`View ${project.clientName} project`}
-              >
-                {/* Inner border highlight — framer-cy9ysw */}
-                <div className="absolute inset-0 rounded-[24px] border border-white/10 z-[1] pointer-events-none" />
-                {/* Image fill — framer-1a1qf3u */}
-                <div className="absolute inset-0 rounded-[24px]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    decoding="auto"
-                    width={912}
-                    height={1140}
-                    sizes="(min-width: 1440px) 456px, (min-width: 810px) and (max-width: 1439.98px) 300px, (max-width: 809.98px) 300px"
-                    srcSet={project.coverSrcSet}
-                    src={project.coverImage}
-                    alt="Cover Image"
-                    className="block w-full h-full rounded-[inherit] object-cover object-center"
-                  />
-                </div>
-              </a>
+              {/* Image + Click to View Button Container */}
+              <div className="flex flex-col gap-3 shrink-0 w-[300px] min-[1440px]:w-[456px] max-[809px]:w-[160px] max-[809px]:shrink-0 self-stretch">
+                <a
+                  href={project.href}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onSelect(project.id);
+                  }}
+                  className="block relative rounded-[24px] overflow-hidden border border-[#0c0c0c]/82 no-underline flex-1"
+                  aria-label={`View ${project.clientName} project`}
+                >
+                  {/* Inner border highlight — framer-cy9ysw */}
+                  <div className="absolute inset-0 rounded-[24px] border border-white/10 z-[1] pointer-events-none" />
+                  {/* Image fill — framer-1a1qf3u */}
+                  <div className="absolute inset-0 rounded-[24px]">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      decoding="auto"
+                      width={912}
+                      height={1140}
+                      sizes="(min-width: 1440px) 456px, (min-width: 810px) and (max-width: 1439.98px) 300px, (max-width: 809.98px) 300px"
+                      srcSet={project.coverSrcSet}
+                      src={project.coverImage}
+                      alt="Cover Image"
+                      className="block w-full h-full rounded-[inherit] object-cover object-center"
+                    />
+                  </div>
+                </a>
+
+                <motion.button
+                  onClick={() => onSelect(project.id)}
+                  className="w-full py-2.5 px-4 rounded-[16px] bg-white/8 border border-white/10 text-white font-kyiv-sans text-[11px] font-normal tracking-[0.08em] uppercase cursor-pointer text-center select-none"
+                  whileHover={{ scale: 1.02, backgroundColor: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.2)" }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                >
+                  Click to View
+                </motion.button>
+              </div>
 
               {/* Stats panel — framer-5i263h */}
               <div className="flex flex-col justify-between gap-6 shrink-0 basis-[160px] min-w-0 min-[1440px]:basis-[200px] max-[809px]:justify-start max-[809px]:gap-3 max-[809px]:flex-none">
@@ -221,7 +233,8 @@ export default function SelectedWorks() {
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
-          setProjects(data);
+          const sorted = [...data].sort((a, b) => a.number.localeCompare(b.number));
+          setProjects(sorted);
         }
       })
       .catch((err) => console.error("Failed to load projects from API:", err));

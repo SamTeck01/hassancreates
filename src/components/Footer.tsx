@@ -3,12 +3,15 @@
 import React, { useRef, useState, useEffect } from "react";
 import { motion, useInView } from "framer-motion";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import StaggeredText from "./StaggeredText";
 import footerBg from "../../public/Footer bg.png"
 
 export default function Footer() {
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.1 });
+  const router = useRouter();
+  const lastTap = useRef<number>(0);
 
   // Dynamic London clock
   const [londonTime, setLondonTime] = useState("");
@@ -179,7 +182,16 @@ export default function Footer() {
           </div>
 
           {/* Giant Bottom Wordmark */}
-          <div className="w-full text-center relative overflow-hidden select-none mt-5 z-10">
+          <div 
+            className="w-full text-center relative overflow-hidden select-none mt-5 z-10 cursor-pointer"
+            onClick={() => {
+              const now = Date.now();
+              if (now - lastTap.current < 300) {
+                router.push("/admin");
+              }
+              lastTap.current = now;
+            }}
+          >
             <h1 className="font-kyiv text-[clamp(60px,16vw,190px)] font-bold leading-none text-white tracking-[-0.04em]">
               <StaggeredText
                 text="HassanCreates"

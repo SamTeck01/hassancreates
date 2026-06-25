@@ -2,6 +2,15 @@
 
 import React, { useRef, useState } from "react";
 import { motion, useInView } from "framer-motion";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  InstagramIcon,
+  NewTwitterIcon,
+  Linkedin01Icon,
+  Behance01Icon,
+  WhatsappIcon,
+} from "@hugeicons/core-free-icons";
+
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Marquee — exact conversion of Framer's TextCard + marquee section
@@ -129,6 +138,41 @@ function ContactMarquee() {
     </section>
   );
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Social Links Component
+   ──────────────────────────────────────────────────────────────────────────── */
+
+interface SocialLinkProps {
+  href: string;
+  icon: any;
+  label: string;
+}
+
+function SocialLink({ href, icon, label }: SocialLinkProps) {
+  return (
+    <motion.a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={label}
+      className="text-white flex items-center justify-center w-12 h-12"
+      whileHover={{ scale: 1.15 }}
+      whileTap={{ scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+    >
+      <HugeiconsIcon icon={icon} size={36} strokeWidth={1.5} />
+    </motion.a>
+  );
+}
+
+const SOCIAL_LINKS = [
+  { href: "https://instagram.com/hassancreates_", icon: InstagramIcon, label: "Instagram" },
+  { href: "https://x.com/hassancreates", icon: NewTwitterIcon, label: "X (Twitter)" },
+  { href: "https://linkedin.com/in/hassancreates", icon: Linkedin01Icon, label: "LinkedIn" },
+  { href: "https://behance.net/hassancreates", icon: Behance01Icon, label: "Behance" },
+  { href: "https://wa.me/2347065208037", icon: WhatsappIcon, label: "WhatsApp" },
+];
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Main Contact component
@@ -304,6 +348,20 @@ export default function Contact() {
                     Let&apos;s make something happen together
                   </p>
                 </div>
+
+                {/* Social media icons column (PC) / row (Mobile) */}
+                <div 
+                  className="flex flex-row min-[810px]:flex-row gap-6 items-center min-[810px]:items-start mt-2 min-[810px]:ps-6"
+                >
+                  {SOCIAL_LINKS.map((link) => (
+                    <SocialLink
+                      key={link.label}
+                      href={link.href}
+                      icon={link.icon}
+                      label={link.label}
+                    />
+                  ))}
+                </div>
               </div>
 
               {/* framer-1u7niw7 — Right */}
@@ -458,6 +516,7 @@ export default function Contact() {
                             justifyContent: "center",
                             padding: "14px 32px",
                             border: "none",
+                            cursor: "pointer",
                           }}
                         >
                           {/* framer-qox4nh — button text */}
@@ -521,6 +580,14 @@ export default function Contact() {
         #contact input::placeholder,
         #contact textarea::placeholder {
           color: rgba(255, 255, 255, 0.64);
+        }
+        #contact input,
+        #contact textarea {
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        #contact input:focus,
+        #contact textarea:focus {
+          border-bottom: 1.5px solid rgb(167, 139, 250) !important;
         }
       `}</style>
 

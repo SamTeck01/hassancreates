@@ -65,11 +65,8 @@ export default function PhotoViewer({ projectId, onClose }: PhotoViewerProps) {
 
   // Lock scroll in background on mount, restore on unmount
   useEffect(() => {
-    const originalBodyOverflow = document.body.style.overflow;
-    const originalHtmlOverflow = document.documentElement.style.overflow;
-
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
+    document.body.classList.add("modal-open");
+    document.documentElement.classList.add("modal-open");
 
     // Pause Lenis smooth scroll
     if (typeof window !== "undefined" && (window as any).lenis) {
@@ -77,8 +74,8 @@ export default function PhotoViewer({ projectId, onClose }: PhotoViewerProps) {
     }
 
     return () => {
-      document.body.style.overflow = originalBodyOverflow;
-      document.documentElement.style.overflow = originalHtmlOverflow;
+      document.body.classList.remove("modal-open");
+      document.documentElement.classList.remove("modal-open");
       // Resume Lenis smooth scroll
       if (typeof window !== "undefined" && (window as any).lenis) {
         (window as any).lenis.start();
@@ -177,15 +174,14 @@ export default function PhotoViewer({ projectId, onClose }: PhotoViewerProps) {
 
       {/* 1. Header Bar */}
       <header
-        className={`lightbox-header absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-[#f5f0ff]/50 to-transparent flex items-center justify-between px-6 z-[1110] text-[#08070d] pointer-events-auto transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          !showControls ? "-translate-y-full opacity-0 pointer-events-none" : ""
-        }`}
+        className={`lightbox-header absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-[#f5f0ff]/50 to-transparent flex items-center justify-between px-6 z-[1110] text-[#08070d] pointer-events-auto transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${!showControls ? "-translate-y-full opacity-0 pointer-events-none" : ""
+          }`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-4">
           <button
             onClick={onClose}
-            className="icon-button bg-transparent border-none text-[#08070d] cursor-pointer flex items-center justify-center p-2 rounded-full transition-[background-color,transform] duration-200 ease-in-out w-10 h-10 hover:bg-[#6B21D9]/8 hover:scale-105 active:scale-95"
+            className="icon-button bg-transparent border-none text-[#08070d] cursor-pointer flex items-center justify-center p-2 rounded-full transition-[background-color,transform] duration-200 ease-in-out w-12 h-12 hover:bg-[#6B21D9]/8 hover:scale-105 active:scale-95"
             aria-label="Close photo viewer"
           >
             <svg
@@ -205,7 +201,17 @@ export default function PhotoViewer({ projectId, onClose }: PhotoViewerProps) {
           <h1 className="font-kyiv text-[18px] font-normal tracking-[-0.01em] text-[#08070d] m-0">{data.clientName}</h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
+          {data.href && (
+            <a
+              href={data.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="icon-button flex items-center justify-center gap-1.5 px-4 h-9 rounded-full bg-[#6B21D9] hover:bg-[#6B21D9]/90 text-white font-kyiv-sans text-[11px] font-medium uppercase tracking-[0.08em] transition-colors no-underline cursor-pointer select-none"
+            >
+              View Project
+            </a>
+          )}
           <span className="text-[13px] text-[#08070d]/65 tracking-[0.05em] font-medium">
             {currentIndex + 1} / {data.swiperImages.length}
           </span>
@@ -224,9 +230,8 @@ export default function PhotoViewer({ projectId, onClose }: PhotoViewerProps) {
               e.stopPropagation();
               handlePrev();
             }}
-            className={`nav-arrow absolute top-1/2 -translate-y-1/2 z-[1110] w-12 h-12 rounded-full bg-white/85 border border-[#6B21D9]/15 text-[#6B21D9] flex items-center justify-center cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] backdrop-blur-[8px] hover:bg-[#6B21D9] hover:text-white hover:border-[#6B21D9] hover:shadow-[0_8px_24px_rgba(107,33,217,0.2)] left-[max(24px,calc(50%-330px))] min-[810px]:hidden min-[810px]:group-hover/swiper:flex ${
-              !showControls ? "!opacity-0 !pointer-events-none" : ""
-            }`}
+            className={`nav-arrow absolute top-1/2 -translate-y-1/2 z-[1110] w-12 h-12 rounded-full bg-white/85 border border-[#6B21D9]/15 text-[#6B21D9] flex items-center justify-center cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] backdrop-blur-[8px] hover:bg-[#6B21D9] hover:text-white hover:border-[#6B21D9] hover:shadow-[0_8px_24px_rgba(107,33,217,0.2)] left-[max(24px,calc(50%-330px))] hidden min-[810px]:group-hover/swiper:flex ${!showControls ? "!opacity-0 !pointer-events-none" : ""
+              }`}
             aria-label="Previous slide"
           >
             <svg
@@ -250,9 +255,8 @@ export default function PhotoViewer({ projectId, onClose }: PhotoViewerProps) {
               e.stopPropagation();
               handleNext();
             }}
-            className={`nav-arrow absolute top-1/2 -translate-y-1/2 z-[1110] w-12 h-12 rounded-full bg-white/85 border border-[#6B21D9]/15 text-[#6B21D9] flex items-center justify-center cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] backdrop-blur-[8px] hover:bg-[#6B21D9] hover:text-white hover:border-[#6B21D9] hover:shadow-[0_8px_24px_rgba(107,33,217,0.2)] right-[max(24px,calc(50%-330px))] min-[810px]:hidden min-[810px]:group-hover/swiper:flex ${
-              !showControls ? "!opacity-0 !pointer-events-none" : ""
-            }`}
+            className={`nav-arrow absolute top-1/2 -translate-y-1/2 z-[1110] w-12 h-12 rounded-full bg-white/85 border border-[#6B21D9]/15 text-[#6B21D9] flex items-center justify-center cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] backdrop-blur-[8px] hover:bg-[#6B21D9] hover:text-white hover:border-[#6B21D9] hover:shadow-[0_8px_24px_rgba(107,33,217,0.2)] right-[max(24px,calc(50%-330px))] hidden min-[810px]:group-hover/swiper:flex ${!showControls ? "!opacity-0 !pointer-events-none" : ""
+              }`}
             aria-label="Next slide"
           >
             <svg
@@ -332,11 +336,10 @@ export default function PhotoViewer({ projectId, onClose }: PhotoViewerProps) {
 
       {/* 3. Bottom WhatsApp-Style Caption/Description Panel */}
       <div
-        className={`description-panel absolute bottom-0 left-0 right-0 z-[1110] text-[#08070d] flex flex-col bg-gradient-to-t from-[#f5f0ff]/50 via-[#f5f0ff]/20 to-transparent pt-12 px-6 pb-6 max-h-[180px] overflow-hidden transition-[max-height,transform,opacity] duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto max-[809px]:pt-8 max-[809px]:px-4 max-[809px]:pb-4 max-[809px]:max-h-[150px] ${
-          isExpanded
+        className={`description-panel absolute bottom-0 left-0 right-0 z-[1110] text-[#08070d] flex flex-col bg-gradient-to-t from-[#f5f0ff]/50 via-[#f5f0ff]/20 to-transparent pt-12 px-6 pb-6 max-h-[180px] overflow-hidden transition-[max-height,transform,opacity] duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] pointer-events-auto max-[809px]:pt-8 max-[809px]:px-4 max-[809px]:pb-4 max-[809px]:max-h-[150px] ${isExpanded
             ? "!max-h-[70vh] bg-[#f5f0ff]/97 backdrop-blur-[20px] border-t border-[#6B21D9]/15 pt-6 max-[809px]:!max-h-[60vh]"
             : ""
-        } ${!showControls ? "translate-y-full opacity-0 pointer-events-none" : ""}`}
+          } ${!showControls ? "translate-y-full opacity-0 pointer-events-none" : ""}`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col gap-4 overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#08070d]/15 [&::-webkit-scrollbar-thumb]:rounded-[2px]">
@@ -347,14 +350,23 @@ export default function PhotoViewer({ projectId, onClose }: PhotoViewerProps) {
             </span>
           </div>
 
-          <p className="text-[14px] leading-[1.65] text-[#444444] m-0 font-light max-w-[800px]">
-            {isExpanded
-              ? data.tagline
-              : data.imageCaptions[currentIndex] || data.tagline}
-          </p>
+          <div>
+            <p className="text-[14px] leading-[1.65] text-[#444444] m-0 font-light max-w-[800px] whitespace-pre-line">
+              {isExpanded
+                ? `${data.description}\n\n${data.tagline}`
+                : data.imageCaptions[currentIndex] || data.description}
+              {" "}
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="bg-transparent border-none text-[#6B21D9] text-[11px] font-semibold cursor-pointer p-2 -m-2 transition-opacity duration-200 tracking-[0.08em] uppercase hover:opacity-80 inline-block align-middle ml-1"
+              >
+                {isExpanded ? "See Less" : "See More"}
+              </button>
+            </p>
+          </div>
 
           {isExpanded && (
-            <div className="flex flex-wrap gap-2 mt-1">
+            <div className="flex flex-wrap gap-2 mt-2">
               {data.services.map((srv) => (
                 <span key={srv} className="text-[11px] font-normal bg-[#6B21D9]/6 text-[#6B21D9] py-1 px-3 rounded-full border border-[#6B21D9]/12">
                   {srv}
@@ -362,13 +374,6 @@ export default function PhotoViewer({ projectId, onClose }: PhotoViewerProps) {
               ))}
             </div>
           )}
-
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="bg-transparent border-none text-[#6B21D9] text-[11px] font-semibold cursor-pointer py-1 px-0 self-start transition-opacity duration-200 mt-1 tracking-[0.08em] uppercase hover:opacity-80"
-          >
-            {isExpanded ? "Show Less" : "Read Full Story"}
-          </button>
         </div>
       </div>
     </motion.div>

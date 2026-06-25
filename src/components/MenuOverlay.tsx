@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 
 interface MenuOverlayProps {
@@ -9,6 +9,36 @@ interface MenuOverlayProps {
 }
 
 export default function MenuOverlay({ isOpen, onClose }: MenuOverlayProps) {
+  // Lock scroll in background when open, restore on close or unmount
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add("modal-open");
+      document.documentElement.classList.add("modal-open");
+
+      // Pause Lenis smooth scroll
+      if (typeof window !== "undefined" && (window as any).lenis) {
+        (window as any).lenis.stop();
+      }
+    } else {
+      document.body.classList.remove("modal-open");
+      document.documentElement.classList.remove("modal-open");
+
+      // Resume Lenis smooth scroll
+      if (typeof window !== "undefined" && (window as any).lenis) {
+        (window as any).lenis.start();
+      }
+    }
+
+    // Cleanup: always remove scroll lock class and resume Lenis scroll when unmounted
+    return () => {
+      document.body.classList.remove("modal-open");
+      document.documentElement.classList.remove("modal-open");
+      if (typeof window !== "undefined" && (window as any).lenis) {
+        (window as any).lenis.start();
+      }
+    };
+  }, [isOpen]);
+
   const listVariants = {
     visible: {
       transition: {
@@ -46,6 +76,7 @@ export default function MenuOverlay({ isOpen, onClose }: MenuOverlayProps) {
           : { opacity: 0, pointerEvents: "none" }
       }
       transition={{ duration: 0.35 }}
+      data-lenis-prevent
     >
       {/* Explicit Close (X) Button in Top Right */}
       <button
