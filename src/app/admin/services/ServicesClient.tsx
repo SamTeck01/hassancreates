@@ -170,6 +170,34 @@ function ConfirmDelete({ open, name, onCancel, onConfirm, busy }: {
   );
 }
 
+// ── Draft Card ────────────────────────────────────────────────────────────────
+function DraftServiceCard({ draft, onEdit, onPublish, onDiscard, busy }: {
+  draft: { sTitle: string; sCount: string; sDesc: string; sImg1: string; sImg2: string };
+  onEdit: () => void; onPublish: () => void; onDiscard: () => void; busy: boolean;
+}) {
+  return (
+    <article className="bg-[#161616] border border-dashed border-[#6B21D9]/40 rounded-2xl overflow-hidden flex flex-col">
+      <div className="h-20 bg-zinc-900/50 border-b border-white/5 flex overflow-hidden relative">
+        {draft.sImg1 && <div className="w-1/2 border-r border-white/5 overflow-hidden"><img src={draft.sImg1} alt="" className="w-full h-full object-cover opacity-40" /></div>}
+        {draft.sImg2 && <div className="w-1/2 overflow-hidden"><img src={draft.sImg2} alt="" className="w-full h-full object-cover opacity-40" /></div>}
+        {!draft.sImg1 && !draft.sImg2 && <div className="w-full h-full flex items-center justify-center text-white/8"><HugeiconsIcon icon={Settings02Icon} size={28} strokeWidth={1.5} /></div>}
+        <span className="absolute top-2 left-2 bg-[#6B21D9] text-white text-[9px] font-bold h-5 px-2 rounded-full flex items-center uppercase tracking-wider">Draft</span>
+      </div>
+      <div className="p-4 flex-grow flex flex-col gap-1.5">
+        <span className="text-[13px] font-bold text-white/60">{draft.sTitle || "Untitled Draft"}</span>
+        <p className="text-[11px] text-white/30 leading-relaxed line-clamp-3">{draft.sDesc || "No description yet."}</p>
+      </div>
+      <div className="px-4 pb-4 flex gap-2">
+        <button onClick={onEdit} className="flex-1 py-2 bg-[#6B21D9]/10 hover:bg-[#6B21D9]/20 border border-[#6B21D9]/20 text-[11px] font-semibold text-[#a78bfa] hover:text-white rounded-xl transition-colors">Edit</button>
+        <button onClick={onPublish} disabled={busy} className="flex-1 py-2 bg-[#6B21D9] hover:bg-[#7c3aed] text-[11px] font-bold text-white rounded-xl transition-colors disabled:opacity-50">Publish</button>
+        <button onClick={onDiscard} className="p-2 bg-red-950/15 hover:bg-red-950/30 border border-red-900/10 hover:border-red-900/25 text-red-500 hover:text-red-400 rounded-xl transition-colors">
+          <HugeiconsIcon icon={Delete01Icon} size={13} strokeWidth={2} />
+        </button>
+      </div>
+    </article>
+  );
+}
+
 // ── Services Client ───────────────────────────────────────────────────────────
 export default function ServicesClient({ initialServices }: { initialServices: Service[] }) {
   const [list, setList] = useState<Service[]>(initialServices);
@@ -187,9 +215,56 @@ export default function ServicesClient({ initialServices }: { initialServices: S
   const [sImg1, setSImg1] = useState("");
   const [sImg2, setSImg2] = useState("");
 
+  const [draft, setDraft] = useState<{ sTitle: string; sCount: string; sDesc: string; sImg1: string; sImg2: string } | null>(null);
+
+  // Load draft card from localStorage on mount
+  useEffect(() => {
+    const raw = typeof window !== "undefined" ? localStorage.getItem("hc-service-draft") : null;
+    if (!raw) return;
+    try {
+      const d = JSON.parse(raw);
+      if (d.sTitle || d.sDesc) setDraft(d);
+    } catch {}
+  }, []);
+
   const reset = () => {
     setSTitle(""); setSCount(""); setSDesc(""); setSImg1(""); setSImg2("");
     setError(""); setSuccess(false); setEditing(null);
+  };
+
+  const saveDraft = () => {
+    const d = { sTitle, sCount, sDesc, sImg1, sImg2 };
+    localStorage.setItem("hc-service-draft", JSON.stringify(d));
+    setDraft(d);
+    setModalOpen(false);
+  };
+
+  const openDraft = () => {
+    if (!draft) return;
+    setSTitle(draft.sTitle); setSCount(draft.sCount); setSDesc(draft.sDesc);
+    setSImg1(draft.sImg1); setSImg2(draft.sImg2);
+    setEditing(null);
+    setModalOpen(true);
+  };
+
+  const discardDraft = () => {
+    localStorage.removeItem("hc-service-draft");
+    setDraft(null);
+  };
+
+  const publishDraft = async () => {
+    if (!draft || !draft.sTitle || !draft.sDesc) { alert("Draft needs at least a title and description."); return; }
+    setSubmitting(true);
+    try {
+      const id = draft.sTitle.toLowerCase().replace(/[^a-z0-9]/g, "-") + "-" + Date.now().toString().slice(-4);
+      const num = (list.length + 1).toString().padStart(2, "0");
+      const r = await addService({ id, num, title: draft.sTitle, count: draft.sCount || "(0)", description: draft.sDesc, image1: draft.sImg1, image2: draft.sImg2 });
+      if (r.success) {
+        setList((p) => [...p, { id, num, title: draft.sTitle, count: draft.sCount || "(0)", description: draft.sDesc, image1: draft.sImg1, image2: draft.sImg2 }]);
+        localStorage.removeItem("hc-service-draft"); setDraft(null);
+      } else alert(r.error || "Publish failed.");
+    } catch { alert("Unexpected error."); }
+    finally { setSubmitting(false); }
   };
 
   const openEdit = (s: Service) => {
@@ -210,7 +285,7 @@ export default function ServicesClient({ initialServices }: { initialServices: S
         if (r.success) {
           setSuccess(true);
           setList((p) => p.map((x) => x.id === editing.id ? { ...x, title: sTitle, count: sCount, description: sDesc, image1: sImg1, image2: sImg2 } : x));
-          setTimeout(() => { setModalOpen(false); reset(); }, 1400);
+          setTimeout(() => { setModalOpen(false); reset(); localStorage.removeItem("hc-service-draft"); setDraft(null); }, 1400);
         } else setError(r.error || "Update failed.");
       } else {
         const id = sTitle.toLowerCase().replace(/[^a-z0-9]/g, "-") + "-" + Date.now().toString().slice(-4);
@@ -219,7 +294,7 @@ export default function ServicesClient({ initialServices }: { initialServices: S
         if (r.success) {
           setSuccess(true);
           setList((p) => [...p, { id, num, title: sTitle, count: sCount || "(0)", description: sDesc, image1: sImg1, image2: sImg2 }]);
-          setTimeout(() => { setModalOpen(false); reset(); }, 1400);
+          setTimeout(() => { setModalOpen(false); reset(); localStorage.removeItem("hc-service-draft"); setDraft(null); }, 1400);
         } else setError(r.error || "Failed.");
       }
     } catch { setError("Unexpected error."); }
@@ -250,7 +325,7 @@ export default function ServicesClient({ initialServices }: { initialServices: S
             <p className="text-xs text-white/30 mt-0.5">{list.length} offering{list.length !== 1 ? "s" : ""} live</p>
           </div>
           <button
-            onClick={() => { reset(); setModalOpen(true); }}
+            onClick={() => { if (editing !== null) reset(); setModalOpen(true); }}
             className="flex items-center gap-2 bg-[#6B21D9] hover:bg-[#7c3aed] text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-colors shadow-lg shadow-[#6B21D9]/20"
           >
             + Add Service
@@ -258,7 +333,7 @@ export default function ServicesClient({ initialServices }: { initialServices: S
         </header>
 
         {/* Grid */}
-        {list.length === 0 ? (
+        {list.length === 0 && !draft ? (
           <div className="bg-[#161616] border border-white/6 rounded-2xl">
             <div className="flex flex-col items-center justify-center py-20 px-6 text-center gap-4">
               <div className="w-14 h-14 rounded-2xl bg-white/4 border border-white/6 flex items-center justify-center text-white/15">
@@ -272,6 +347,7 @@ export default function ServicesClient({ initialServices }: { initialServices: S
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            {draft && <DraftServiceCard draft={draft} onEdit={openDraft} onPublish={publishDraft} onDiscard={discardDraft} busy={submitting} />}
             {list.map((s) => (
               <article key={s.id} className="bg-[#161616] border border-white/6 rounded-2xl overflow-hidden flex flex-col hover:border-white/10 transition-colors">
                 {/* Dual preview */}
@@ -299,7 +375,7 @@ export default function ServicesClient({ initialServices }: { initialServices: S
       </div>
 
       {/* ── Service Modal ── */}
-      <Modal open={modalOpen} onClose={() => { setModalOpen(false); reset(); }} title={editing ? `Edit: ${editing.title}` : "Add New Service"}>
+      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? `Edit: ${editing.title}` : "Add New Service"}>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="grid grid-cols-3 gap-3">
             <div className="col-span-2"><label className={labelCls}>Title *</label><input className={inputCls} value={sTitle} onChange={(e) => setSTitle(e.target.value)} placeholder="UI/UX Design" required /></div>
@@ -314,11 +390,24 @@ export default function ServicesClient({ initialServices }: { initialServices: S
           {error && <p className="text-red-400 text-xs px-3 py-2 bg-red-950/20 border border-red-900/20 rounded-lg">{error}</p>}
           {success && <p className="text-emerald-400 text-xs px-3 py-2 bg-emerald-950/20 border border-emerald-900/20 rounded-lg">✓ {editing ? "Service updated!" : "Service added!"}</p>}
 
-          <div className="flex justify-end gap-3 pt-2 border-t border-white/5">
-            <button type="button" onClick={() => { setModalOpen(false); reset(); }} className="px-4 py-2 text-xs font-semibold text-white/45 hover:text-white transition-colors" disabled={submitting}>Cancel</button>
-            <button type="submit" disabled={submitting} className="bg-[#6B21D9] hover:bg-[#7c3aed] text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-colors disabled:opacity-50">
-              {submitting ? "Saving…" : editing ? "Save Changes" : "Add Service"}
-            </button>
+          <div className="flex items-center justify-between pt-2 border-t border-white/5">
+            <button type="button" onClick={() => setModalOpen(false)} className="px-4 py-2 text-xs font-semibold text-white/45 hover:text-white transition-colors" disabled={submitting}>Cancel</button>
+            <div className="flex gap-3">
+              {!editing && (
+                <button
+                  type="button"
+                  onClick={saveDraft}
+                  disabled={submitting}
+                  className="px-4 py-2 text-xs font-semibold text-white/60 hover:text-white bg-white/5 hover:bg-white/8 border border-white/5 rounded-xl transition-colors flex items-center gap-1.5"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                  Save Draft
+                </button>
+              )}
+              <button type="submit" disabled={submitting} className="bg-[#6B21D9] hover:bg-[#7c3aed] text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-colors disabled:opacity-50">
+                {submitting ? "Saving…" : editing ? "Save Changes" : "Add Service"}
+              </button>
+            </div>
           </div>
         </form>
       </Modal>

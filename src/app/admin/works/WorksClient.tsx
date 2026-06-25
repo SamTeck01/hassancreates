@@ -213,6 +213,42 @@ function ConfirmDelete({
   );
 }
 
+// ── Draft Card ────────────────────────────────────────────────────────────────
+function DraftProjectCard({ draft, onEdit, onPublish, onDiscard, busy }: {
+  draft: { [key: string]: any };
+  onEdit: () => void; onPublish: () => void; onDiscard: () => void; busy: boolean;
+}) {
+  return (
+    <article className="bg-[#161616] border border-dashed border-[#6B21D9]/40 rounded-2xl overflow-hidden flex flex-col group">
+      <div className="relative aspect-[16/10] bg-zinc-900/50 overflow-hidden border-b border-white/5">
+        {draft.fCover ? (
+          <img src={draft.fCover} alt={draft.fName || "Draft"} className="w-full h-full object-cover opacity-40" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-white/8">
+            <HugeiconsIcon icon={Briefcase02Icon} size={32} strokeWidth={1.5} />
+          </div>
+        )}
+        <span className="absolute top-2.5 left-2.5 bg-[#6B21D9] text-white text-[9px] font-bold h-5 px-2 rounded-full flex items-center uppercase tracking-wider">Draft</span>
+      </div>
+      <div className="p-4 flex-grow flex flex-col gap-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[13px] font-bold text-white/60 truncate">{draft.fName || "Untitled Draft"}</span>
+          {draft.fYear && <span className="text-[10px] font-mono text-white/25 flex-shrink-0">{draft.fYear}</span>}
+        </div>
+        {draft.fRole && <span className="text-[10px] font-bold text-[#6B21D9] uppercase tracking-wider">{draft.fRole}</span>}
+        <p className="text-[11px] text-white/30 line-clamp-2 leading-relaxed mt-auto pt-2 border-t border-white/4">{draft.fDesc || "No description yet."}</p>
+      </div>
+      <div className="px-4 pb-4 flex gap-2">
+        <button onClick={onEdit} className="flex-1 py-2 bg-[#6B21D9]/10 hover:bg-[#6B21D9]/20 border border-[#6B21D9]/20 text-[11px] font-semibold text-[#a78bfa] hover:text-white rounded-xl transition-colors">Edit</button>
+        <button onClick={onPublish} disabled={busy} className="flex-1 py-2 bg-[#6B21D9] hover:bg-[#7c3aed] text-[11px] font-bold text-white rounded-xl transition-colors disabled:opacity-50">Publish</button>
+        <button onClick={onDiscard} className="p-2 bg-red-950/15 hover:bg-red-950/30 border border-red-900/10 hover:border-red-900/25 text-red-500 hover:text-red-400 rounded-xl transition-colors">
+          <HugeiconsIcon icon={Delete01Icon} size={13} strokeWidth={2} />
+        </button>
+      </div>
+    </article>
+  );
+}
+
 // ── Works Client ──────────────────────────────────────────────────────────────
 export default function WorksClient({ initialProjects }: { initialProjects: Project[] }) {
   const [list, setList] = useState<Project[]>(initialProjects);
@@ -239,11 +275,72 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
   const [fSwiper, setFSwiper] = useState<string[]>([]);
   const [fCaptions, setFCaptions] = useState<string[]>([]);
 
+  const [draft, setDraft] = useState<{ [key: string]: any } | null>(null);
+
+  // Load draft card from localStorage on mount
+  useEffect(() => {
+    const raw = typeof window !== "undefined" ? localStorage.getItem("hc-project-draft") : null;
+    if (!raw) return;
+    try {
+      const d = JSON.parse(raw);
+      if (d.fName || d.fDesc) setDraft(d);
+    } catch {}
+  }, []);
+
   const reset = () => {
     setFName(""); setFYear(""); setFRole(""); setFServices("");
     setFDesc(""); setFTagline(""); setFHref(""); setFCover(""); setFBg("");
     setFSwiper([]); setFCaptions([]);
     setError(""); setSuccess(false); setEditing(null);
+  };
+
+  const saveDraft = () => {
+    const d = { fName, fYear, fRole, fServices, fDesc, fTagline, fHref, fCover, fBg, fSwiper, fCaptions };
+    localStorage.setItem("hc-project-draft", JSON.stringify(d));
+    setDraft(d);
+    setModalOpen(false);
+  };
+
+  const openDraft = () => {
+    if (!draft) return;
+    setFName(draft.fName ?? ""); setFYear(draft.fYear ?? ""); setFRole(draft.fRole ?? "");
+    setFServices(draft.fServices ?? ""); setFDesc(draft.fDesc ?? ""); setFTagline(draft.fTagline ?? "");
+    setFHref(draft.fHref ?? ""); setFCover(draft.fCover ?? ""); setFBg(draft.fBg ?? "");
+    setFSwiper(draft.fSwiper ?? []); setFCaptions(draft.fCaptions ?? []);
+    setEditing(null);
+    setModalOpen(true);
+  };
+
+  const discardDraft = () => {
+    localStorage.removeItem("hc-project-draft");
+    setDraft(null);
+  };
+
+  const publishDraft = async () => {
+    if (!draft || !draft.fName || !draft.fDesc || !draft.fCover) {
+      alert("Draft needs at least a client name, description, and cover image."); return;
+    }
+    setSubmitting(true);
+    try {
+      const id = draft.fName.toLowerCase().replace(/[^a-z0-9]/g, "-") + "-" + Date.now().toString().slice(-4);
+      const num = (list.length + 1).toString().padStart(2, "0");
+      const payload = {
+        clientName: draft.fName, year: draft.fYear, role: draft.fRole,
+        services: (draft.fServices || "").split(",").map((s: string) => s.trim()).filter(Boolean),
+        description: draft.fDesc, tagline: draft.fTagline || "", href: draft.fHref || "#",
+        coverImage: draft.fCover, coverSrcSet: `${draft.fCover} 1024w`,
+        bgImage: draft.fBg || draft.fCover, bgSrcSet: `${draft.fBg || draft.fCover} 2048w`,
+        swiperImages: draft.fSwiper?.length ? draft.fSwiper : [draft.fCover],
+        imageCaptions: draft.fCaptions?.length ? draft.fCaptions : ["Project showcase."],
+      };
+      const full = { id, number: num, ...payload };
+      const r = await addProject(full);
+      if (r.success) {
+        setList((p) => [...p, full]);
+        localStorage.removeItem("hc-project-draft"); setDraft(null);
+      } else alert(r.error || "Publish failed.");
+    } catch { alert("Unexpected error."); }
+    finally { setSubmitting(false); }
   };
 
   const openEdit = (p: Project) => {
@@ -278,7 +375,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
         if (r.success) {
           setSuccess(true);
           setList((p) => p.map((x) => x.id === editing.id ? { ...x, ...payload } : x));
-          setTimeout(() => { setModalOpen(false); reset(); }, 1400);
+          setTimeout(() => { setModalOpen(false); reset(); localStorage.removeItem("hc-project-draft"); setDraft(null); }, 1400);
         } else setError(r.error || "Update failed.");
       } else {
         const id = fName.toLowerCase().replace(/[^a-z0-9]/g, "-") + "-" + Date.now().toString().slice(-4);
@@ -288,7 +385,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
         if (r.success) {
           setSuccess(true);
           setList((p) => [...p, full]);
-          setTimeout(() => { setModalOpen(false); reset(); }, 1400);
+          setTimeout(() => { setModalOpen(false); reset(); localStorage.removeItem("hc-project-draft"); setDraft(null); }, 1400);
         } else setError(r.error || "Failed.");
       }
     } catch { setError("Unexpected error."); }
@@ -320,7 +417,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
             <p className="text-xs text-white/30 mt-0.5">{list.length} project{list.length !== 1 ? "s" : ""} live</p>
           </div>
           <button
-            onClick={() => { reset(); setModalOpen(true); }}
+            onClick={() => { if (editing !== null) reset(); setModalOpen(true); }}
             className="flex items-center gap-2 bg-[#6B21D9] hover:bg-[#7c3aed] text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-colors shadow-lg shadow-[#6B21D9]/20"
           >
             + Upload Project
@@ -328,7 +425,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
         </header>
 
         {/* Grid */}
-        {list.length === 0 ? (
+        {list.length === 0 && !draft ? (
           <div className="bg-[#161616] border border-white/6 rounded-2xl">
             <div className="flex flex-col items-center justify-center py-20 px-6 text-center gap-4">
               <div className="w-14 h-14 rounded-2xl bg-white/4 border border-white/6 flex items-center justify-center text-white/15">
@@ -342,6 +439,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            {draft && <DraftProjectCard draft={draft} onEdit={openDraft} onPublish={publishDraft} onDiscard={discardDraft} busy={submitting} />}
             {list.map((p) => (
               <article key={p.id} className="bg-[#161616] border border-white/6 rounded-2xl overflow-hidden flex flex-col hover:border-white/10 transition-colors group">
                 {/* Cover */}
@@ -388,7 +486,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
       {/* ── Project Modal ── */}
       <Modal
         open={modalOpen}
-        onClose={() => { setModalOpen(false); reset(); }}
+        onClose={() => setModalOpen(false)}
         title={editing ? `Edit: ${editing.clientName}` : "Upload New Project"}
       >
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -446,11 +544,24 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
           {error && <p className="text-red-400 text-xs px-3 py-2 bg-red-950/20 border border-red-900/20 rounded-lg">{error}</p>}
           {success && <p className="text-emerald-400 text-xs px-3 py-2 bg-emerald-950/20 border border-emerald-900/20 rounded-lg">✓ {editing ? "Updated!" : "Uploaded!"}</p>}
 
-          <div className="flex justify-end gap-3 pt-2 border-t border-white/5">
-            <button type="button" onClick={() => { setModalOpen(false); reset(); }} className="px-4 py-2 text-xs font-semibold text-white/45 hover:text-white transition-colors" disabled={submitting}>Cancel</button>
-            <button type="submit" disabled={submitting} className="bg-[#6B21D9] hover:bg-[#7c3aed] text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-colors disabled:opacity-50">
-              {submitting ? "Saving…" : editing ? "Save Changes" : "Upload Project"}
-            </button>
+          <div className="flex items-center justify-between pt-2 border-t border-white/5">
+            <button type="button" onClick={() => setModalOpen(false)} className="px-4 py-2 text-xs font-semibold text-white/45 hover:text-white transition-colors" disabled={submitting}>Cancel</button>
+            <div className="flex gap-3">
+              {!editing && (
+                <button
+                  type="button"
+                  onClick={saveDraft}
+                  disabled={submitting}
+                  className="px-4 py-2 text-xs font-semibold text-white/60 hover:text-white bg-white/5 hover:bg-white/8 border border-white/5 rounded-xl transition-colors flex items-center gap-1.5"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                  Save Draft
+                </button>
+              )}
+              <button type="submit" disabled={submitting} className="bg-[#6B21D9] hover:bg-[#7c3aed] text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-colors disabled:opacity-50">
+                {submitting ? "Saving…" : editing ? "Save Changes" : "Upload Project"}
+              </button>
+            </div>
           </div>
         </form>
       </Modal>
