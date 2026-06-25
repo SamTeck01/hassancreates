@@ -112,7 +112,7 @@ function Modal({
 
   if (!open) return null;
   return (
-    <div onClick={onClose} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 overflow-hidden flex items-center justify-center p-4 sm:p-8" data-lenis-prevent>
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 overflow-hidden flex items-center justify-center p-4 sm:p-8" data-lenis-prevent>
       <div
         onClick={(e) => e.stopPropagation()}
         onWheel={(e) => e.stopPropagation()}
@@ -152,7 +152,7 @@ function ConfirmDelete({ open, name, onCancel, onConfirm, busy }: {
 
   if (!open) return null;
   return (
-    <div onClick={onCancel} className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 overflow-hidden">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 overflow-hidden">
       <div onClick={(e) => e.stopPropagation()} className="bg-[#161616] border border-white/8 rounded-2xl w-full max-w-sm p-6 text-center shadow-2xl">
         <div className="w-10 h-10 rounded-full bg-red-950/25 border border-red-900/30 text-red-400 flex items-center justify-center mx-auto mb-4">
           <HugeiconsIcon icon={Delete01Icon} size={16} strokeWidth={2} />
