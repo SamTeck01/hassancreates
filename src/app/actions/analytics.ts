@@ -55,7 +55,12 @@ export async function trackVisitor(ip: string, country?: string | null, city?: s
       city: finalCity,
     });
   } catch (error) {
-    console.error("Failed to track visitor:", error);
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes("TimeoutError") || msg.includes("fetch failed")) {
+      console.log("Neon database connection timed out (offline mode).");
+    } else {
+      console.error("Failed to track visitor:", msg);
+    }
   }
 }
 
@@ -66,7 +71,8 @@ export async function getVisitors() {
       .from(visitors)
       .orderBy(desc(visitors.visited_at));
   } catch (error) {
-    console.error("Failed to retrieve visitors:", error);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("Failed to retrieve visitors:", msg);
     return [];
   }
 }

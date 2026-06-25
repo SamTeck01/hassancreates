@@ -2,7 +2,10 @@
 
 import React, { useRef, useState, useEffect } from "react";
 import { motion, useScroll, useTransform, useMotionTemplate, AnimatePresence } from "framer-motion";
-import PhotoViewer from "./PhotoViewer";
+import dynamic from "next/dynamic";
+const PhotoViewer = dynamic(() => import("./PhotoViewer"), {
+  ssr: false,
+});
 import { Project } from "@/types";
 import { PROJECTS_DATA } from "@/data/projects";
 

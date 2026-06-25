@@ -9,7 +9,11 @@ function getDb() {
 
   const databaseUrl = process.env.DATABASE_URL;
   if (databaseUrl) {
-    const sql = neon(databaseUrl);
+    const sql = neon(databaseUrl, {
+      fetchOptions: {
+        signal: AbortSignal.timeout(1500),
+      },
+    });
     dbInstance = drizzle(sql, { schema });
     return dbInstance;
   }

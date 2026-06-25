@@ -39,7 +39,12 @@ export async function GET() {
 
     return NextResponse.json(dbProjects);
   } catch (error) {
-    console.error("Error querying Neon database, falling back to static data:", error);
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes("TimeoutError") || msg.includes("fetch failed")) {
+      console.log("Neon database connection timed out (offline mode) — falling back to static projects data.");
+    } else {
+      console.error("Error querying Neon database:", msg);
+    }
     return NextResponse.json(PROJECTS_DATA);
   }
 }

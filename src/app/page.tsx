@@ -12,7 +12,10 @@ import Services from "@/components/Services";
 import SelectedWorks from "@/components/SelectedWorks";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
-import MenuOverlay from "@/components/MenuOverlay";
+import dynamic from "next/dynamic";
+const MenuOverlay = dynamic(() => import("@/components/MenuOverlay"), {
+  ssr: false,
+});
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
