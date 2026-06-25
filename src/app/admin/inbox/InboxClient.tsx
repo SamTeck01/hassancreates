@@ -74,21 +74,21 @@ export default function InboxClient() {
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
         <div className="bg-[#161616] border border-white/6 rounded-2xl p-5 flex flex-col gap-2">
-          <span className="text-[10px] uppercase font-bold tracking-widest text-white/30 flex items-center gap-1.5">
+          <span className="text-xs font-semibold tracking-wide text-white/50 flex items-center gap-1.5">
             <HugeiconsIcon icon={Message01Icon} size={11} strokeWidth={2} /> Total
           </span>
           <span className="text-4xl font-black font-mono text-white leading-none">{messages.length}</span>
-          <span className="text-[10px] text-white/20">messages</span>
+          <span className="text-xs text-white/40">messages</span>
         </div>
         <div className="bg-[#161616] border border-white/6 rounded-2xl p-5 flex flex-col gap-2">
-          <span className="text-[10px] uppercase font-bold tracking-widest text-white/30">Unread</span>
+          <span className="text-xs font-semibold tracking-wide text-white/50">Unread</span>
           <span className="text-4xl font-black font-mono text-[#6B21D9] leading-none">{unread}</span>
-          <span className="text-[10px] text-white/20">pending</span>
+          <span className="text-xs text-white/40">pending</span>
         </div>
         <div className="col-span-2 sm:col-span-1 bg-[#161616] border border-white/6 rounded-2xl p-5 flex flex-col gap-2">
-          <span className="text-[10px] uppercase font-bold tracking-widest text-white/30">Read</span>
+          <span className="text-xs font-semibold tracking-wide text-white/50">Read</span>
           <span className="text-4xl font-black font-mono text-white leading-none">{messages.length - unread}</span>
-          <span className="text-[10px] text-white/20">reviewed</span>
+          <span className="text-xs text-white/40">reviewed</span>
         </div>
       </div>
 
@@ -139,12 +139,12 @@ export default function InboxClient() {
                       {m.name.charAt(0)}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-[12px] font-bold text-white truncate">{m.name}</p>
-                      <p className="text-[10px] text-white/30 font-mono truncate">{formatDate(m.receivedAt)}</p>
+                      <p className="text-xs font-bold text-white truncate">{m.name}</p>
+                      <p className="text-[11px] text-white/40 font-mono truncate">{formatDate(m.receivedAt)}</p>
                     </div>
                   </div>
-                  <p className="text-[11px] font-semibold text-white/70 truncate mb-0.5">{m.subject}</p>
-                  <p className="text-[10px] text-white/30 line-clamp-1">{m.message}</p>
+                  <p className="text-[12px] font-semibold text-white/80 truncate mb-0.5">{m.subject}</p>
+                  <p className="text-[11px] text-white/40 line-clamp-1">{m.message}</p>
                 </button>
               ))
             )}
@@ -161,13 +161,13 @@ export default function InboxClient() {
                   <div className="h-10 w-10 rounded-full bg-[#6B21D9]/10 border border-[#6B21D9]/20 flex items-center justify-center text-sm font-bold text-[#6B21D9] flex-shrink-0">
                     {selected.name.charAt(0)}
                   </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-white truncate">{selected.name}</p>
-                    <p className="text-[11px] text-white/35 font-mono truncate flex items-center gap-1">
-                      <HugeiconsIcon icon={Mail01Icon} size={10} strokeWidth={2} className="flex-shrink-0" />
-                      {selected.email}
-                    </p>
-                  </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-white truncate">{selected.name}</p>
+                      <p className="text-xs text-white/50 font-mono truncate flex items-center gap-1.5">
+                        <HugeiconsIcon icon={Mail01Icon} size={10} strokeWidth={2} className="flex-shrink-0" />
+                        {selected.email}
+                      </p>
+                    </div>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
@@ -189,15 +189,15 @@ export default function InboxClient() {
 
               {/* Subject */}
               <div className="px-5 py-3 bg-black/15 border-b border-white/4">
-                <p className="text-[13px] font-semibold text-white">{selected.subject}</p>
-                <p className="text-[10px] text-white/25 font-mono mt-0.5">
+                <p className="text-sm font-semibold text-white">{selected.subject}</p>
+                <p className="text-xs text-white/40 font-mono mt-0.5">
                   {new Date(selected.receivedAt).toLocaleString()}
                 </p>
               </div>
 
               {/* Body */}
               <div className="p-5 overflow-y-auto overscroll-contain flex-grow">
-                <p className="text-[13px] text-white/65 leading-relaxed">{selected.message}</p>
+                <p className="text-sm text-white/80 leading-relaxed font-normal">{selected.message}</p>
               </div>
 
               {/* Reply */}

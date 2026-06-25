@@ -90,7 +90,7 @@ export default function AdminLoginPage() {
           <h1 className="text-white text-xl font-extrabold tracking-tight font-kyiv">
             HassanCreates
           </h1>
-          <p className="text-white/35 text-[13px] mt-1 font-medium">
+          <p className="text-white/55 text-[13px] mt-1 font-medium">
             Admin Dashboard Access
           </p>
         </div>
@@ -119,7 +119,7 @@ export default function AdminLoginPage() {
             
             {/* Username */}
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="admin-username" className="text-[10px] uppercase font-bold tracking-widest text-white/35">
+              <label htmlFor="admin-username" className="text-xs font-semibold tracking-wide text-white/60">
                 Username
               </label>
               <input
@@ -133,13 +133,13 @@ export default function AdminLoginPage() {
                 spellCheck={false}
                 required
                 disabled={isLoading}
-                className="w-full bg-black/40 border border-white/8 rounded-xl px-4 py-3 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#6B21D9]/60 focus:ring-1 focus:ring-[#6B21D9]/20 transition-all disabled:opacity-50 font-medium"
+                className="w-full bg-black/40 border border-white/8 rounded-xl px-4 py-3 text-sm text-white placeholder-white/45 focus:outline-none focus:border-[#6B21D9]/60 focus:ring-1 focus:ring-[#6B21D9]/20 transition-all disabled:opacity-50 font-medium"
               />
             </div>
 
             {/* Password */}
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="admin-password" className="text-[10px] uppercase font-bold tracking-widest text-white/35">
+              <label htmlFor="admin-password" className="text-xs font-semibold tracking-wide text-white/60">
                 Password
               </label>
               <div className="relative">
@@ -152,7 +152,7 @@ export default function AdminLoginPage() {
                   autoComplete="current-password"
                   required
                   disabled={isLoading}
-                  className="w-full bg-black/40 border border-white/8 rounded-xl px-4 py-3 pr-12 text-sm text-white placeholder-white/20 focus:outline-none focus:border-[#6B21D9]/60 focus:ring-1 focus:ring-[#6B21D9]/20 transition-all disabled:opacity-50 font-medium"
+                  className="w-full bg-black/40 border border-white/8 rounded-xl px-4 py-3 pr-12 text-sm text-white placeholder-white/45 focus:outline-none focus:border-[#6B21D9]/60 focus:ring-1 focus:ring-[#6B21D9]/20 transition-all disabled:opacity-50 font-medium"
                 />
                 <button
                   type="button"

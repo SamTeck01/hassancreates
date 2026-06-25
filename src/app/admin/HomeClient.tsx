@@ -35,19 +35,19 @@ export default function HomeClient({ visitors }: { visitors: Visitor[] }) {
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
         <div className="bg-[#161616] border border-white/6 rounded-2xl p-5 flex flex-col gap-2">
-          <span className="text-[10px] uppercase font-bold tracking-widest text-white/30 flex items-center gap-1.5">
+          <span className="text-xs font-semibold tracking-wide text-white/50 flex items-center gap-1.5">
             <HugeiconsIcon icon={GlobeIcon} size={11} strokeWidth={2} /> Total Visitors
           </span>
           <span className="text-4xl font-black font-mono text-white leading-none">{visitors.length}</span>
-          <span className="text-[10px] text-white/20">unique records</span>
+          <span className="text-xs text-white/40">unique records</span>
         </div>
         <div className="bg-[#161616] border border-white/6 rounded-2xl p-5 flex flex-col gap-2">
-          <span className="text-[10px] uppercase font-bold tracking-widest text-white/30">Countries</span>
+          <span className="text-xs font-semibold tracking-wide text-white/50">Countries</span>
           <span className="text-4xl font-black font-mono text-white leading-none">{uniqueCountries}</span>
-          <span className="text-[10px] text-white/20">represented</span>
+          <span className="text-xs text-white/40">represented</span>
         </div>
         <div className="col-span-2 sm:col-span-1 bg-[#161616] border border-white/6 rounded-2xl p-5 flex flex-col gap-2">
-          <span className="text-[10px] uppercase font-bold tracking-widest text-white/30">Today</span>
+          <span className="text-xs font-semibold tracking-wide text-white/50">Today</span>
           <span className="text-4xl font-black font-mono text-white leading-none">
             {visitors.filter((v) => {
               const d = new Date(v.visited_at);
@@ -55,7 +55,7 @@ export default function HomeClient({ visitors }: { visitors: Visitor[] }) {
               return d.toDateString() === now.toDateString();
             }).length}
           </span>
-          <span className="text-[10px] text-white/20">visits today</span>
+          <span className="text-xs text-white/40">visits today</span>
         </div>
       </div>
 
@@ -86,19 +86,19 @@ export default function HomeClient({ visitors }: { visitors: Visitor[] }) {
             <table className="w-full min-w-[380px]">
               <thead>
                 <tr className="border-b border-white/4">
-                  <th className="py-3 px-5 text-left text-[10px] font-bold uppercase tracking-widest text-white/20">#</th>
-                  <th className="py-3 px-5 text-left text-[10px] font-bold uppercase tracking-widest text-white/20">Country</th>
-                  <th className="py-3 px-5 text-left text-[10px] font-bold uppercase tracking-widest text-white/20">City</th>
-                  <th className="py-3 px-5 text-left text-[10px] font-bold uppercase tracking-widest text-white/20">When</th>
+                  <th className="py-3 px-5 text-left text-xs font-semibold tracking-wide text-white/40">#</th>
+                  <th className="py-3 px-5 text-left text-xs font-semibold tracking-wide text-white/40">Country</th>
+                  <th className="py-3 px-5 text-left text-xs font-semibold tracking-wide text-white/40">City</th>
+                  <th className="py-3 px-5 text-left text-xs font-semibold tracking-wide text-white/40">When</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.035]">
                 {visitors.map((v, idx) => (
                   <tr key={v.id} className="hover:bg-white/[0.018] transition-colors">
-                    <td className="py-3.5 px-5 text-[11px] font-mono text-white/20">{idx + 1}</td>
-                    <td className="py-3.5 px-5 text-[13px] text-white font-medium">{v.country || "—"}</td>
-                    <td className="py-3.5 px-5 text-[13px] text-white/45">{v.city || "—"}</td>
-                    <td className="py-3.5 px-5 text-[11px] text-white/30 font-mono whitespace-nowrap">{formatDate(v.visited_at)}</td>
+                    <td className="py-3.5 px-5 text-xs font-mono text-white/35">{idx + 1}</td>
+                    <td className="py-3.5 px-5 text-sm text-white/90 font-medium">{v.country || "—"}</td>
+                    <td className="py-3.5 px-5 text-sm text-white/60">{v.city || "—"}</td>
+                    <td className="py-3.5 px-5 text-xs text-white/50 font-mono whitespace-nowrap">{formatDate(v.visited_at)}</td>
                   </tr>
                 ))}
               </tbody>

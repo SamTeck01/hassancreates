@@ -45,7 +45,7 @@ function ImageUploadZone({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-[10px] uppercase font-bold tracking-widest text-white/35">{label}</span>
+      <span className="text-xs font-semibold tracking-wide text-white/60 mb-1 block">{label}</span>
       <div
         onDragEnter={handleDrag} onDragOver={handleDrag}
         onDragLeave={() => setDragActive(false)}
@@ -224,8 +224,8 @@ export default function ServicesClient({ initialServices }: { initialServices: S
     finally { setDeleting(false); }
   };
 
-  const inputCls = "w-full bg-black/40 border border-white/6 rounded-lg px-3.5 py-2.5 text-[13px] text-white placeholder-white/20 focus:outline-none focus:border-[#6B21D9]/60 focus:ring-1 focus:ring-[#6B21D9]/20 transition-colors";
-  const labelCls = "block text-[10px] uppercase font-bold tracking-widest text-white/35 mb-1.5";
+  const inputCls = "w-full bg-black/40 border border-white/8 rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-white/40 focus:outline-none focus:border-[#6B21D9]/60 focus:ring-1 focus:ring-[#6B21D9]/20 transition-colors";
+  const labelCls = "block text-xs font-semibold tracking-wide text-white/60 mb-1.5";
 
   return (
     <>

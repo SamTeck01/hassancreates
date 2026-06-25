@@ -86,8 +86,12 @@ export function proxy(request: NextRequest, event: NextFetchEvent) {
       request.headers.get("x-real-ip") ??
       "127.0.0.1";
 
+    const country = request.headers.get("x-vercel-ip-country");
+    const cityHeader = request.headers.get("x-vercel-ip-city");
+    const city = cityHeader ? decodeURIComponent(cityHeader) : null;
+
     event.waitUntil(
-      trackVisitor(ip).catch((err) => {
+      trackVisitor(ip, country, city).catch((err) => {
         console.error("Visitor tracking background request failed:", err);
       })
     );
@@ -132,8 +136,13 @@ export function proxy(request: NextRequest, event: NextFetchEvent) {
     return response;
   }
 
-  // ── Protect Admin Routes (allow /admin/login through) ────────────────────
-  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
+  // ── Protect Admin Routes (redirect logged-in users from login page, others from dashboard) ──
+  if (pathname === "/admin/login") {
+    if (isAdminAuthorized(request)) {
+      const dashboardUrl = new URL("/admin", request.url);
+      return NextResponse.redirect(dashboardUrl);
+    }
+  } else if (pathname.startsWith("/admin")) {
     if (!isAdminAuthorized(request)) {
       const loginUrl = new URL("/admin/login", request.url);
       return NextResponse.redirect(loginUrl);

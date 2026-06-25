@@ -2,8 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { motion, useMotionValue, useSpring } from "framer-motion";
+import { usePathname } from "next/navigation";
 
 export default function CustomCursor() {
+  const pathname = usePathname();
+  const isAdmin = pathname?.startsWith("/admin");
+
   const [hovering, setHovering] = useState(false);
   const [clicking, setClicking] = useState(false);
   const [visible, setVisible] = useState(false);
@@ -14,6 +18,7 @@ export default function CustomCursor() {
   const sy = useSpring(y, { stiffness: 150, damping: 18, mass: 0.6 });
 
   useEffect(() => {
+    if (isAdmin) return;
     if (window.matchMedia("(pointer: coarse)").matches) return;
     
     const move = (e: MouseEvent) => {

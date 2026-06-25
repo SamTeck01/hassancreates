@@ -65,7 +65,7 @@ function ImageUploadZone({
     finally { setUploading(false); }
   };
 
-  const labelCls = "text-[10px] uppercase font-bold tracking-widest text-white/35 mb-1.5 block";
+  const labelCls = "text-xs font-semibold tracking-wide text-white/60 mb-1.5 block";
 
   return (
     <div className="flex flex-col gap-1.5">
@@ -293,8 +293,8 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
     finally { setDeleting(false); }
   };
 
-  const inputCls = "w-full bg-black/40 border border-white/6 rounded-lg px-3.5 py-2.5 text-[13px] text-white placeholder-white/20 focus:outline-none focus:border-[#6B21D9]/60 focus:ring-1 focus:ring-[#6B21D9]/20 transition-colors";
-  const labelCls = "block text-[10px] uppercase font-bold tracking-widest text-white/35 mb-1.5";
+  const inputCls = "w-full bg-black/40 border border-white/8 rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-white/40 focus:outline-none focus:border-[#6B21D9]/60 focus:ring-1 focus:ring-[#6B21D9]/20 transition-colors";
+  const labelCls = "block text-xs font-semibold tracking-wide text-white/60 mb-1.5";
 
   return (
     <>
@@ -398,7 +398,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
           {/* Slideshow images */}
           {fSwiper.length > 0 && (
             <div className="border-t border-white/5 pt-4">
-              <p className="text-[10px] uppercase font-bold tracking-widest text-white/25 mb-3">Slideshow</p>
+              <p className="text-xs uppercase font-bold tracking-wider text-white/50 mb-3">Slideshow</p>
               <div className="flex flex-col gap-2">
                 {fSwiper.map((url, i) => (
                   <div key={i} className="flex gap-2 bg-black/20 border border-white/5 rounded-xl p-2.5 items-center">
