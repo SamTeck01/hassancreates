@@ -299,8 +299,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
   return (
     <>
       <style>{`@keyframes shimmer { to { transform: translateX(200%); } }`}</style>
-
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 pt-6 sm:pt-10 pb-4 text-white" style={{ cursor: "auto" }}>
+      <div className="text-white">
         {/* Header */}
         <header className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>

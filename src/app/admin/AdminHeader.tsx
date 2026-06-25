@@ -14,7 +14,7 @@ const TABS = [
   { href: "/admin", label: "Visitors", icon: GlobeIcon, exact: true },
   { href: "/admin/works", label: "Works", icon: Briefcase02Icon, exact: false },
   { href: "/admin/services", label: "Services", icon: Settings02Icon, exact: false },
-  { href: "/admin", label: "Inbox", icon: Message01Icon, exact: true },
+  { href: "/admin/inbox", label: "Inbox", icon: Message01Icon, exact: false },
 ] as const;
 
 export default function AdminHeader() {
@@ -33,19 +33,19 @@ export default function AdminHeader() {
   };
 
   return (
-    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 border-b border-white/5 pb-6 mb-8 max-w-[1300px] mx-auto px-6 pt-12">
+    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 border-b border-white/5 pb-6 mb-8">
       {/* Brand + sign out */}
       <div className="flex items-center gap-4">
-        <h1 className="text-3xl font-extrabold tracking-tight text-white font-kyiv">
+        <h1 className="text-3xl font-extrabold tracking-tight text-white">
           HassanCreates{" "}
-          <span className="text-white/40 font-light font-sans text-xl">/ Dashboard</span>
+          <span className="text-white/40 font-light text-xl">/ Dashboard</span>
         </h1>
         <button
           onClick={handleLogout}
           title="Sign out"
-          className="ml-2 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider text-white/35 hover:text-red-400 border border-white/5 hover:border-red-900/30 hover:bg-red-950/15 transition-all cursor-pointer"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider text-white/35 hover:text-red-400 border border-white/5 hover:border-red-900/30 hover:bg-red-950/15 transition-all cursor-pointer"
         >
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
             <polyline points="16 17 21 12 16 7" />
             <line x1="21" y1="12" x2="9" y2="12" />
@@ -54,13 +54,13 @@ export default function AdminHeader() {
         </button>
       </div>
 
-      {/* Desktop tab navigation — hidden on mobile (bottom nav handles mobile) */}
+      {/* Desktop tab navigation — hidden on mobile (sm:flex) */}
       <nav className="hidden sm:flex space-x-1 bg-[#1a1a1a] p-1.5 rounded-xl border border-white/5">
         {TABS.map((tab) => {
           const active = isActive(tab);
           return (
             <Link
-              key={`${tab.href}-${tab.label}`}
+              key={tab.href}
               href={tab.href}
               className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-wider rounded-lg transition-all ${
                 active
@@ -68,7 +68,7 @@ export default function AdminHeader() {
                   : "text-white/60 hover:text-white"
               }`}
             >
-              <HugeiconsIcon icon={tab.icon} size={14} strokeWidth={2} />
+              <HugeiconsIcon icon={tab.icon} size={13} strokeWidth={2} />
               {tab.label}
             </Link>
           );
