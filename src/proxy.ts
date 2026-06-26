@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import type { NextRequest, NextFetchEvent } from "next/server";
-import { trackVisitor } from "@/app/actions/analytics";
 
 // ── Rate Limiting Store (in-memory, resets on cold start) ────────────────────
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -101,38 +100,6 @@ async function isAdminAuthorized(request: NextRequest): Promise<boolean> {
 
 export async function proxy(request: NextRequest, event: NextFetchEvent) {
   const { pathname } = request.nextUrl;
-
-  // ── Visitor tracking on homepage ──────────────────────────────────────────
-  if (pathname === "/") {
-    const userAgent = request.headers.get("user-agent")?.toLowerCase() || "";
-    
-    // Ignore bots, crawlers, and monitoring tools
-    const isBot = /bot|google|bing|yandex|ahrefs|semrush|baidu|crawler|spider|robot|crawling|lighthouse|headless|curl|wget|ping|uptime|status|monitor/i.test(userAgent);
-    
-    // Ignore prefetch requests (Next.js Link prefetching)
-    const isPrefetch = 
-      request.headers.get("purpose") === "prefetch" ||
-      request.headers.get("sec-purpose") === "prefetch" ||
-      request.headers.get("x-middleware-prefetch") === "1" ||
-      request.headers.get("next-router-prefetch") === "1";
-
-    if (!isBot && !isPrefetch) {
-      const ip =
-        request.headers.get("x-forwarded-for")?.split(",")[0] ??
-        request.headers.get("x-real-ip") ??
-        "127.0.0.1";
-
-      const country = request.headers.get("x-vercel-ip-country");
-      const cityHeader = request.headers.get("x-vercel-ip-city");
-      const city = cityHeader ? decodeURIComponent(cityHeader) : null;
-
-      event.waitUntil(
-        trackVisitor(ip, country, city).catch((err) => {
-          console.error("Visitor tracking background request failed:", err);
-        })
-      );
-    }
-  }
 
   // ── Stricter rate limiting on login endpoint ──────────────────────────────
   if (pathname === "/api/admin/login") {

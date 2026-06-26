@@ -1,11 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 // Global motion components
 import CustomCursor from "@/components/CustomCursor";
 import SmoothScroll from "@/components/SmoothScroll";
 import ScrollProgress from "@/components/ScrollProgress";
+import JsonLd from "@/components/JsonLd";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,42 +28,86 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+const SITE_URL = "https://hassancreates.design";
+
 export const metadata: Metadata = {
-  title: "hassancreates | Visual & Motion Designer Portfolio",
+  metadataBase: new URL(SITE_URL),
+
+  title: {
+    default: "Hassan Okesanjo | Visual & Motion Designer — hassancreates.design",
+    template: "%s | hassancreates",
+  },
   description:
-    "I turn ideas into visuals that stick. Welcome to the portfolio of Hassan, a Visual and Motion Designer working at the intersection of strategy and aesthetics.",
+    "Hassan is a Visual and Motion Designer based in London, UK. Specialising in brand identity, motion graphics, UI/UX design, and creative direction. Available for freelance projects worldwide.",
+
   keywords: [
-    "Hassan",
+    // Brand
     "hassancreates",
+    "Hassan Okesanjo",
+    "hassancreates.design",
+    // Core disciplines
     "Visual Designer",
     "Motion Designer",
     "Graphic Designer",
     "Creative Director",
-    "Branding",
-    "Web Design",
+    "Brand Identity Designer",
+    // Services
+    "Logo Design",
+    "Motion Graphics",
     "UI/UX Design",
-    "Kyiv Type Titling",
+    "Web Design",
+    "Social Media Design",
+    "Branding",
+    "Rebranding",
     "Design Portfolio",
-    "Digital Art",
+    // Location & intent
+    "Freelance Designer London",
+    "Freelance Graphic Designer UK",
+    "Motion Designer for Hire",
+    "Brand Designer Portfolio",
+    "Creative Portfolio 2025",
+    // Long-tail
+    "Visual designer for startups",
+    "Motion design for brands",
+    "I turn ideas into visuals that stick",
+    "Design that converts",
   ],
-  authors: [{ name: "Hassan", url: "https://hassancreates.com" }],
-  creator: "Hassan",
+
+  authors: [{ name: "Hassan Okesanjo", url: SITE_URL }],
+  creator: "Hassan Okesanjo",
+  publisher: "hassancreates",
+
+  alternates: {
+    canonical: SITE_URL,
+  },
+
   openGraph: {
-    title: "hassancreates | Visual & Motion Designer Portfolio",
+    title: "Hassan Okesanjo | Visual & Motion Designer",
     description:
-      "I turn ideas into visuals that stick. Welcome to the portfolio of Hassan, a Visual and Motion Designer.",
-    url: "https://hassancreates.com",
+      "I turn ideas into visuals that stick. Portfolio of Hassan Okesanjo — Visual & Motion Designer based in London, UK. Brand identity, motion graphics, UI/UX.",
+    url: SITE_URL,
     siteName: "hassancreates",
     locale: "en_US",
     type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "hassancreates — Visual & Motion Designer Portfolio",
+      },
+    ],
   },
+
   twitter: {
     card: "summary_large_image",
-    title: "hassancreates | Visual & Motion Designer Portfolio",
+    title: "Hassan Okesanjo | Visual & Motion Designer",
     description:
-      "I turn ideas into visuals that stick. Welcome to the portfolio of Hassan, a Visual and Motion Designer.",
+      "I turn ideas into visuals that stick. Portfolio of Hassan — Visual & Motion Designer based in London.",
     creator: "@hassancreates",
+    images: ["/og-image.png"],
   },
+
   robots: {
     index: true,
     follow: true,
@@ -72,6 +118,11 @@ export const metadata: Metadata = {
       "max-image-preview": "large",
       "max-snippet": -1,
     },
+  },
+
+  verification: {
+    // Add your Google Search Console verification token here once you set up GSC
+    // google: "your-verification-token",
   },
 };
 
@@ -87,10 +138,12 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col antialiased" suppressHydrationWarning>
+        <JsonLd />
         <CustomCursor />
         <SmoothScroll />
         <ScrollProgress />
         {children}
+        <Analytics />
       </body>
     </html>
   );

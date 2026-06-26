@@ -173,7 +173,7 @@ export default function Hero() {
           {prefersReducedMotion ? (
             <span className="font-kyiv-serif font-medium">{states[currentIndex]}</span>
           ) : (
-            <span className="relative inline-flex overflow-hidden align-middle select-none justify-start">
+            <span className="relative inline-flex overflow-hidden align-middle select-none justify-start" aria-label={states[currentIndex]}>
               <AnimatePresence mode="popLayout" initial={false}>
                 <motion.span
                   key={currentIndex}

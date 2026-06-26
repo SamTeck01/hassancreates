@@ -17,25 +17,65 @@ interface Service {
 }
 
 // ── Image Upload Zone ─────────────────────────────────────────────────────────
+// Single-slot zone — but accepts multiple files if the parent supplies onBulk.
+// When multiple files are dropped/selected: first 2 are uploaded in parallel
+// and the parent can route them to image1 / image2 automatically.
 function ImageUploadZone({
-  label, value, onChange,
+  label, value, onChange, onBulk,
 }: {
-  label: string; value: string; onChange: (url: string) => void;
+  label: string;
+  value: string;
+  onChange: (url: string) => void;
+  /** Called with an array of uploaded URLs when >1 file is dropped/selected */
+  onBulk?: (urls: string[]) => void;
 }) {
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ done: number; total: number } | null>(null);
 
-  const uploadFile = async (file: File) => {
-    setUploading(true);
+  const uploadOne = async (file: File): Promise<string | null> => {
     const fd = new FormData();
     fd.append("file", file);
     try {
       const res = await fetch("/api/upload", { method: "POST", body: fd });
       const data = await res.json();
-      if (data.success) onChange(data.url);
-      else alert(data.error || "Upload failed.");
-    } catch { alert("Upload error."); }
-    finally { setUploading(false); }
+      if (data.success) return data.url as string;
+      else { alert(data.error || "Upload failed."); return null; }
+    } catch {
+      alert("Upload error.");
+      return null;
+    }
+  };
+
+  const uploadFiles = async (files: File[]) => {
+    if (files.length === 0) return;
+    setUploading(true);
+    setUploadProgress(files.length > 1 ? { done: 0, total: files.length } : null);
+
+    if (files.length === 1) {
+      // Single file — original behaviour
+      const url = await uploadOne(files[0]);
+      if (url) onChange(url);
+    } else if (onBulk) {
+      // Multiple files — upload in parallel
+      let done = 0;
+      const urls = await Promise.all(
+        files.slice(0, 2).map(async (f) => {
+          const url = await uploadOne(f);
+          done++;
+          setUploadProgress({ done, total: files.length });
+          return url;
+        })
+      );
+      onBulk(urls.filter(Boolean) as string[]);
+    } else {
+      // Fallback: upload only the first file
+      const url = await uploadOne(files[0]);
+      if (url) onChange(url);
+    }
+
+    setUploading(false);
+    setUploadProgress(null);
   };
 
   const handleDrag = (e: React.DragEvent) => {
@@ -49,7 +89,11 @@ function ImageUploadZone({
       <div
         onDragEnter={handleDrag} onDragOver={handleDrag}
         onDragLeave={() => setDragActive(false)}
-        onDrop={(e) => { e.preventDefault(); setDragActive(false); if (e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]); }}
+        onDrop={(e) => {
+          e.preventDefault(); setDragActive(false);
+          const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith("image/"));
+          if (files.length > 0) uploadFiles(files);
+        }}
         className={`relative h-24 border border-dashed rounded-xl flex flex-col items-center justify-center gap-1 p-3 transition-colors overflow-hidden ${
           dragActive ? "border-[#6B21D9] bg-[#6B21D9]/5" : "border-white/10 bg-black/20 hover:border-white/20"
         }`}
@@ -65,7 +109,13 @@ function ImageUploadZone({
         ) : uploading ? (
           <div className="flex flex-col items-center gap-1.5">
             <span className="h-4 w-4 rounded-full border-2 border-white/10 border-t-[#6B21D9] animate-spin" />
-            <span className="text-[10px] text-white/40">Uploading…</span>
+            {uploadProgress ? (
+              <span className="text-[10px] text-white/40">
+                Uploading {uploadProgress.done}/{uploadProgress.total}…
+              </span>
+            ) : (
+              <span className="text-[10px] text-white/40">Uploading…</span>
+            )}
           </div>
         ) : (
           <>
@@ -73,10 +123,19 @@ function ImageUploadZone({
               Drop or{" "}
               <label className="text-[#6B21D9] cursor-pointer hover:underline">
                 browse
-                <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0])} className="hidden" />
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files ?? []);
+                    if (files.length > 0) uploadFiles(files);
+                  }}
+                  className="hidden"
+                />
               </label>
             </span>
-            <span className="text-[9px] text-white/25 font-mono">PNG, JPG, WEBP · max 10MB</span>
+            <span className="text-[9px] text-white/25 font-mono">PNG, JPG, WEBP · max 10MB · select multiple</span>
           </>
         )}
       </div>
@@ -383,8 +442,24 @@ export default function ServicesClient({ initialServices }: { initialServices: S
           </div>
           <div><label className={labelCls}>Description *</label><textarea className={`${inputCls} h-28 resize-none`} value={sDesc} onChange={(e) => setSDesc(e.target.value)} placeholder="What does this service include?" required /></div>
           <div className="grid grid-cols-2 gap-3">
-            <ImageUploadZone label="Preview Image 1" value={sImg1} onChange={setSImg1} />
-            <ImageUploadZone label="Preview Image 2" value={sImg2} onChange={setSImg2} />
+            <ImageUploadZone
+              label="Preview Image 1"
+              value={sImg1}
+              onChange={setSImg1}
+              onBulk={(urls) => {
+                if (urls[0]) setSImg1(urls[0]);
+                if (urls[1]) setSImg2(urls[1]);
+              }}
+            />
+            <ImageUploadZone
+              label="Preview Image 2"
+              value={sImg2}
+              onChange={setSImg2}
+              onBulk={(urls) => {
+                if (urls[0]) setSImg2(urls[0]);
+                if (urls[1]) setSImg1(urls[1]);
+              }}
+            />
           </div>
 
           {error && <p className="text-red-400 text-xs px-3 py-2 bg-red-950/20 border border-red-900/20 rounded-lg">{error}</p>}

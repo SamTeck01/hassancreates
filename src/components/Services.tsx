@@ -343,6 +343,8 @@ export default function Services() {
                   delay: index * 0.08
                 }}
                 className="w-full text-left flex flex-col py-6 md:py-11 border-t border-[#E3E3E8] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6B21D9] focus-visible:ring-offset-2 relative transition-colors duration-300 group cursor-pointer"
+                itemScope
+                itemType="https://schema.org/Service"
               >
                 <div className="w-full grid grid-cols-12 items-center gap-4 md:gap-6">
                   
@@ -357,7 +359,7 @@ export default function Services() {
                       <span className="text-neutral-300 text-sm md:text-2xl font-light font-kyiv-sans select-none">—</span>
                       {/* Title + Count */}
                       <span className="relative flex items-start">
-                        <span className={`font-kyiv-sans font-semibold text-lg md:text-[32px] tracking-tight transition-all duration-300 group-hover:translate-x-1.5 ${titleColorClass}`}>
+                        <span className={`font-kyiv-sans font-semibold text-lg md:text-[32px] tracking-tight transition-all duration-300 group-hover:translate-x-1.5 ${titleColorClass}`} itemProp="name">
                           {service.title}
                         </span>
                         <span className="text-[9px] md:text-[11px] font-kyiv-sans text-neutral-400 ml-1.5 self-start pt-0.5 md:pt-1 font-normal select-none">

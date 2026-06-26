@@ -192,7 +192,7 @@ export default function Footer() {
               lastTap.current = now;
             }}
           >
-            <h1 className="font-kyiv text-[clamp(60px,16vw,190px)] font-bold leading-none text-white tracking-[-0.04em]">
+            <p className="font-kyiv text-[clamp(60px,16vw,190px)] font-bold leading-none text-white tracking-[-0.04em] m-0">
               <StaggeredText
                 text="HassanCreates"
                 trigger="scroll"
@@ -203,7 +203,7 @@ export default function Footer() {
                   WebkitTextFillColor: "transparent"
                 }}
               />
-            </h1>
+            </p>
           </div>
         </motion.div>
 

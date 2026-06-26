@@ -1,78 +1,103 @@
 "use server";
 
-import { db } from "@/lib/db";
-import { visitors } from "@/lib/db/schema";
-import { eq, desc } from "drizzle-orm";
+// ── Vercel Analytics — pull real human-only stats via REST API ────────────────
+// Vercel filters bots server-side before counting any view/visitor.
+// Requires: VERCEL_API_TOKEN + VERCEL_PROJECT_ID in env vars.
 
-async function sha256(message: string): Promise<string> {
-  const msgBuffer = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+export interface VercelAnalytics {
+  views: number;
+  visitors: number;
+  viewsToday: number;
+  visitorsToday: number;
+  topPages: { path: string; views: number }[];
+  available: boolean; // false when env vars are missing
 }
 
-export async function trackVisitor(ip: string, country?: string | null, city?: string | null) {
-  // 1. Hash the IP using SHA-256 (preserves privacy, raw IP is never stored)
-  const hash = await sha256(ip);
+const VERCEL_API = "https://api.vercel.com";
 
-  try {
-    // 2. Check if already recorded in the database
-    const existing = await db
-      .select()
-      .from(visitors)
-      .where(eq(visitors.ip_hash, hash))
-      .limit(1);
+function todayRange(): { from: string; to: string } {
+  const now = new Date();
+  const from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const to   = new Date(from.getTime() + 86400000 - 1);
+  return {
+    from: from.toISOString().slice(0, 10),
+    to:   to.toISOString().slice(0, 10),
+  };
+}
 
-    if (existing.length > 0) return; // Already seen, skip inserting
+function last30Range(): { from: string; to: string } {
+  const to   = new Date();
+  const from = new Date(to.getTime() - 30 * 86400000);
+  return {
+    from: from.toISOString().slice(0, 10),
+    to:   to.toISOString().slice(0, 10),
+  };
+}
 
-    // 3. Get location details
-    let finalCountry = country || "Unknown";
-    let finalCity = city || "Unknown";
+async function vercelFetch(path: string, token: string): Promise<Response> {
+  return fetch(`${VERCEL_API}${path}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    next: { revalidate: 120 }, // cache for 2 min
+  });
+}
 
-    // Only try querying ip-api if country is unknown AND we are not on a local IP
-    const isLocalIp = ip === "127.0.0.1" || ip === "::1" || ip === "localhost" || ip.startsWith("192.168.") || ip.startsWith("10.");
-    if (finalCountry === "Unknown" && !isLocalIp) {
-      try {
-        const res = await fetch(
-          `http://ip-api.com/json/${ip}?fields=status,country,city`
-        );
-        if (res.ok) {
-          const data = await res.json();
-          if (data.status !== "fail") {
-            finalCountry = data.country ?? "Unknown";
-            finalCity = data.city ?? "Unknown";
-          }
-        }
-      } catch (e) {
-        console.error("Failed to query geolocation API:", e);
-      }
-    }
+export async function getVercelAnalytics(): Promise<VercelAnalytics> {
+  const token     = process.env.VERCEL_API_TOKEN;
+  const projectId = process.env.VERCEL_PROJECT_ID;
 
-    // 4. Insert new unique visitor record
-    await db.insert(visitors).values({
-      ip_hash: hash,
-      country: finalCountry,
-      city: finalCity,
-    });
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    if (msg.includes("TimeoutError") || msg.includes("fetch failed")) {
-      console.log("Neon database connection timed out (offline mode).");
-    } else {
-      console.error("Failed to track visitor:", msg);
-    }
+  if (!token || !projectId) {
+    console.warn("VERCEL_API_TOKEN or VERCEL_PROJECT_ID not set — analytics unavailable");
+    return {
+      views: 0, visitors: 0, viewsToday: 0, visitorsToday: 0,
+      topPages: [], available: false,
+    };
   }
-}
 
-export async function getVisitors() {
   try {
-    return await db
-      .select()
-      .from(visitors)
-      .orderBy(desc(visitors.visited_at));
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error("Failed to retrieve visitors:", msg);
-    return [];
+    const { from: f30, to: t30 } = last30Range();
+    const { from: fDay, to: tDay } = todayRange();
+
+    const [summaryRes, todayRes, pagesRes] = await Promise.all([
+      // 30-day totals
+      vercelFetch(
+        `/v1/web-analytics/${projectId}/summary?from=${f30}&to=${t30}`,
+        token
+      ),
+      // Today totals
+      vercelFetch(
+        `/v1/web-analytics/${projectId}/summary?from=${fDay}&to=${tDay}`,
+        token
+      ),
+      // Top pages (last 30 days)
+      vercelFetch(
+        `/v1/web-analytics/${projectId}/pages?from=${f30}&to=${t30}&limit=5`,
+        token
+      ),
+    ]);
+
+    const summary = summaryRes.ok ? await summaryRes.json() : null;
+    const today   = todayRes.ok   ? await todayRes.json()   : null;
+    const pages   = pagesRes.ok   ? await pagesRes.json()   : null;
+
+    return {
+      views:         summary?.pageviews ?? 0,
+      visitors:      summary?.visitors  ?? 0,
+      viewsToday:    today?.pageviews   ?? 0,
+      visitorsToday: today?.visitors    ?? 0,
+      topPages: (pages?.data ?? []).map((p: { path: string; pageviews: number }) => ({
+        path:  p.path,
+        views: p.pageviews,
+      })),
+      available: true,
+    };
+  } catch (err) {
+    console.error("Failed to fetch Vercel analytics:", err);
+    return {
+      views: 0, visitors: 0, viewsToday: 0, visitorsToday: 0,
+      topPages: [], available: false,
+    };
   }
 }
