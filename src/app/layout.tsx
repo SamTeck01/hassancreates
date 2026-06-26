@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Analytics } from "@vercel/analytics/next";
 
 // Global motion components
 import CustomCursor from "@/components/CustomCursor";
@@ -91,6 +92,7 @@ export default function RootLayout({
         <SmoothScroll />
         <ScrollProgress />
         {children}
+        <Analytics />
       </body>
     </html>
   );
