@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     template: "%s | hassancreates",
   },
   description:
-    "Hassan is a Visual and Motion Designer based in London, UK. Specialising in brand identity, motion graphics, UI/UX design, and creative direction. Available for freelance projects worldwide.",
+    "Hassan is a Visual and Motion Designer based in Nigeria. Specialising in brand identity, motion graphics, UI/UX design, and creative direction. Available for freelance projects worldwide.",
 
   keywords: [
     // Brand

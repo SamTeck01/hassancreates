@@ -10,7 +10,7 @@ const personSchema = {
   url: SITE_URL,
   jobTitle: "Visual & Motion Designer",
   description:
-    "Hassan Okesanjo is a Visual and Motion Designer based in London, UK, specialising in brand identity, motion graphics, UI/UX design, and creative direction.",
+    "Hassan Okesanjo is a Visual and Motion Designer based in Nigeria, specialising in brand identity, motion graphics, UI/UX design, and creative direction.",
   image: `${SITE_URL}/avatar.png`,
   sameAs: [
     "https://linkedin.com/in/hassan-okesanjo-46a948353",

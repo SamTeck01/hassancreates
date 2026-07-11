@@ -14,46 +14,60 @@ interface LogoItem {
 
 const LOGOS: LogoItem[] = [
   {
-    id: "logo-1",
-    src: "https://framerusercontent.com/images/3cWSgJFsUVvZeOw9LdQmTOSVFhE.svg",
-    width: 58,
+    id: "logo-afrinix",
+    src: "/logos/afrinix-logo.png",
+    width: 32,
     height: 32,
-    alt: "Logo-image",
+    alt: "Afrinix logo",
   },
   {
-    id: "logo-2",
-    src: "https://framerusercontent.com/images/nfabfL1KTOOmw22T9soWodkE5Q.svg",
-    width: 127,
+    id: "logo-fproject",
+    src: "/logos/f-project.png",
+    width: 24,
     height: 32,
-    alt: "Logo-image",
+    alt: "F Project logo",
   },
   {
-    id: "logo-3",
-    src: "https://framerusercontent.com/images/pFmkT2mGzyfTzJsLN2Lr3fdbIk.svg",
-    width: 167,
+    id: "logo-fhenix",
+    src: "/logos/fhenix-logo.svg",
+    width: 174,
     height: 32,
-    alt: "client-logo",
+    alt: "Fhenix Logo",
   },
   {
-    id: "logo-4",
-    src: "https://framerusercontent.com/images/oqkjAivG8qVmaPBg07Z4Yst8rwk.svg",
-    width: 162,
+    id: "logo-loopin",
+    src: "/logos/loopin-network-logo.svg",
+    width: 110,
     height: 32,
-    alt: "Logo-image",
+    alt: "Loopin Network logo",
   },
   {
-    id: "logo-5",
-    src: "https://framerusercontent.com/images/nmwtsE1SWD34rSXL3OhLE7CTn0.svg",
-    width: 83,
+    id: "logo-morphllm",
+    src: "/logos/morphllm-logo.svg",
+    width: 125,
     height: 32,
-    alt: "Logo-image",
+    alt: "Morphllm logo",
   },
   {
-    id: "logo-6",
-    src: "https://framerusercontent.com/images/zhMiNUjAyE25vd6XOETCIwS38.svg",
-    width: 131,
+    id: "logo-pelargo",
+    src: "/logos/pelargo-logo.svg",
+    width: 67,
     height: 32,
-    alt: "Logo-image",
+    alt: "Pelargo Logo",
+  },
+  {
+    id: "logo-solace",
+    src: "/logos/solace-logo.svg",
+    width: 76,
+    height: 32,
+    alt: "Solace logo",
+  },
+  {
+    id: "logo-switchlabs",
+    src: "/logos/switch-labs-logo.svg",
+    width: 66,
+    height: 32,
+    alt: "Switch labs Logo",
   },
 ];
 
@@ -138,7 +152,7 @@ export default function ClientLogos() {
                   >
                     <div
                       className="framer-19lyshx-container relative"
-                      data-framer-name={`Logo Card${(idx % 6) + 1}`}
+                      data-framer-name={`Logo Card${(idx % LOGOS.length) + 1}`}
                       style={{
                         height: "32px",
                         width: `${logo.width}px`,
