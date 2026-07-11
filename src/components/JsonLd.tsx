@@ -38,8 +38,8 @@ const professionalServiceSchema = {
   "@type": "ProfessionalService",
   name: "hassancreates",
   url: SITE_URL,
-  logo: `${SITE_URL}/favicon.ico`,
-  image: `${SITE_URL}/og-image.png`,
+  logo: `${SITE_URL}/pfp.png`,
+  image: `${SITE_URL}/opengraph-image.png`,
   description:
     "Visual & Motion Design studio by Hassan Okesanjo. Services include brand identity, motion graphics, UI/UX, web design, and social media design.",
   founder: {
