@@ -11,7 +11,9 @@ function getDb() {
   if (databaseUrl) {
     const sql = neon(databaseUrl, {
       fetchOptions: {
-        signal: AbortSignal.timeout(1500),
+        // Neon serverless can take 2–5 s on cold start; 8 s gives enough headroom
+        // without hanging indefinitely on a genuine outage.
+        signal: AbortSignal.timeout(8000),
       },
     });
     dbInstance = drizzle(sql, { schema });

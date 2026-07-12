@@ -60,16 +60,18 @@ const nextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              // Scripts: self + inline (needed for Next.js hydration chunks)
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              // Scripts: self + inline (needed for Next.js hydration) + Vercel live toolbar
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live",
               // Styles: self + inline (Tailwind / CSS-in-JS require this)
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               // Fonts: self + Google Fonts
               "font-src 'self' https://fonts.gstatic.com data:",
               // Images: self + Cloudinary + Framer + local data URIs
               "img-src 'self' data: blob: https://res.cloudinary.com https://framerusercontent.com",
-              // API/Fetch connections: self + Neon DB only goes through server-side
-              "connect-src 'self' https://res.cloudinary.com",
+              // Media: allow data: URIs (e.g. audio playback via base64)
+              "media-src 'self' data: blob:",
+              // API/Fetch connections: self + Cloudinary + Vercel Analytics + Vercel Live
+              "connect-src 'self' https://res.cloudinary.com https://vitals.vercel-insights.com https://vercel.live wss://vercel.live",
               // No object embeds
               "object-src 'none'",
               // Block base tag hijacking
