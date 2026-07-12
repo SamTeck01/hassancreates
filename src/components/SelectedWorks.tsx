@@ -17,11 +17,13 @@ function WorkCard({
   isLast,
   isMobile,
   onSelect,
+  total,
 }: {
   project: Project & { stickyTop: number; zIndex: number };
   isLast: boolean;
   isMobile: boolean;
   onSelect: (projectId: string) => void;
+  total: number;
 }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
 
@@ -118,11 +120,17 @@ function WorkCard({
                   {/* framer-k15jqr */}
                   <p className="font-kyiv-sans text-[13px] font-normal text-white m-0">{project.number}</p>
                   {/* framer-1eo6faf */}
-                  <p className="font-kyiv-sans text-[13px] font-normal text-white/64 m-0">&nbsp;/ 03</p>
+                  <p className="font-kyiv-sans text-[13px] font-normal text-white/64 m-0">&nbsp;/ {String(total).padStart(2, "0")}</p>
                 </div>
 
                 {/* Client name h2 — framer-mtdgxz / framer-styles-preset-13pym41 */}
-                <h2 className="font-kyiv text-[clamp(64px,9vw,130px)] font-normal leading-[0.95] tracking-[-0.03em] text-white m-0 max-[809px]:text-[clamp(38px,8vw,52px)]">
+                <h2
+                  className="font-kyiv font-normal leading-[0.95] tracking-[-0.03em] text-white m-0 max-[809px]:text-[clamp(28px,8vw,52px)]"
+                  style={{
+                    // Auto-shrink: base is 9vw but scales down by character count so long names fit
+                    fontSize: `clamp(36px, ${Math.min(9, 72 / Math.max(project.clientName.length, 8))}vw, 130px)`,
+                  }}
+                >
                   <span className="whitespace-nowrap">
                     {project.clientName.split("").map((char, i) => (
                       <span key={i} className="inline-block opacity-100 transform-none will-change-transform">
@@ -279,6 +287,7 @@ export default function SelectedWorks() {
                   isLast={index === projects.length - 1}
                   isMobile={isMobile}
                   onSelect={setActivePhotoProject}
+                  total={projects.length}
                 />
               );
             })}

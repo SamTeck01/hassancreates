@@ -456,7 +456,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
                 {/* Meta */}
                 <div className="p-4 flex-grow flex flex-col gap-1.5">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[13px] font-bold text-white truncate">{p.clientName}</span>
+                    <span className="text-[12px] font-bold text-white truncate min-w-0">{p.clientName}</span>
                     <span className="text-[10px] font-mono text-white/25 flex-shrink-0">{p.year}</span>
                   </div>
                   <span className="text-[10px] font-bold text-[#6B21D9] uppercase tracking-wider">{p.role}</span>

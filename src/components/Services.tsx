@@ -88,11 +88,15 @@ function ImageStackPreview({ service, isMobile }: ImageStackPreviewProps) {
         className="absolute w-[50px] h-[65px] md:w-[110px] md:h-[140px] bg-[#0E0E10] rounded-[8px] md:rounded-[12px] shadow-[0_8px_24px_rgba(0,0,0,0.1)] overflow-hidden border border-white/5 z-0"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={service.image1}
-          alt={`${service.title} preview illustration`}
-          className="w-full h-full object-cover opacity-75"
-        />
+        {service.image1 ? (
+          <img
+            src={service.image1}
+            alt={`${service.title} preview illustration`}
+            className="w-full h-full object-cover opacity-75"
+          />
+        ) : (
+          <div className="w-full h-full bg-white/5" />
+        )}
       </motion.div>
 
       {/* Front Image Card (Right side, overlapping, floating forward in Z-space) */}
@@ -129,11 +133,15 @@ function ImageStackPreview({ service, isMobile }: ImageStackPreviewProps) {
         className="absolute w-[50px] h-[65px] md:w-[110px] md:h-[140px] bg-white rounded-[8px] md:rounded-[12px] shadow-[0_12px_30px_rgba(0,0,0,0.12)] overflow-hidden border border-neutral-200/40 z-10"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={service.image2}
-          alt={`${service.title} preview mockup`}
-          className="w-full h-full object-cover"
-        />
+        {service.image2 ? (
+          <img
+            src={service.image2}
+            alt={`${service.title} preview mockup`}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full bg-white/10" />
+        )}
       </motion.div>
     </motion.div>
   );
