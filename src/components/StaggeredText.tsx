@@ -26,6 +26,9 @@ export default function StaggeredText({
 
   return (
     <span className={className}>
+      {/* Real text for Google + screen readers; the animated letters are decorative */}
+      <span className="sr-only">{text}</span>
+      <span aria-hidden="true">
       {words.map((word, wIdx) => {
         const letters = Array.from(word);
         const isLastWord = wIdx === words.length - 1;
@@ -95,6 +98,7 @@ export default function StaggeredText({
           </span>
         );
       })}
+      </span>
     </span>
   );
 }

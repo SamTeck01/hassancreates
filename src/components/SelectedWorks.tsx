@@ -118,13 +118,7 @@ function WorkCard({
                     fontSize: `clamp(36px, ${Math.min(9, 72 / Math.max(project.clientName.length, 8))}vw, 130px)`,
                   }}
                 >
-                  <span className="whitespace-nowrap">
-                    {project.clientName.split("").map((char, i) => (
-                      <span key={i} className="inline-block">
-                        {char}
-                      </span>
-                    ))}
-                  </span>
+                  <span className="whitespace-nowrap">{project.clientName}</span>
                 </span>
               </button>
             </div>

@@ -11,7 +11,7 @@ function sanitizeText(input: unknown, maxLength = 500): string {
   return input.trim().slice(0, maxLength);
 }
 
-function validateServicePayload(data: Record<string, unknown>): string | null {
+function validateServicePayload(data: Record<string, unknown>, requireNum = true): string | null {
   const title = sanitizeText(data.title, 200);
   const description = sanitizeText(data.description, 1000);
   const count = sanitizeText(data.count, 20);
@@ -19,7 +19,8 @@ function validateServicePayload(data: Record<string, unknown>): string | null {
 
   if (!title) return "Service title is required.";
   if (!description) return "Service description is required.";
-  if (!num) return "Service number is required.";
+  // `num` is only sent when creating; edits keep the existing number.
+  if (requireNum && !num) return "Service number is required.";
   if (!count) return "Service count is required.";
   return null;
 }
@@ -66,7 +67,7 @@ export async function updateService(id: string, data: {
   image1: string;
   image2: string;
 }) {
-  const validationError = validateServicePayload(data as Record<string, unknown>);
+  const validationError = validateServicePayload(data as Record<string, unknown>, false);
   if (validationError) return { success: false, error: validationError };
 
   try {

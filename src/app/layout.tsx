@@ -89,14 +89,6 @@ export const metadata: Metadata = {
     siteName: "hassancreates",
     locale: "en_US",
     type: "website",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "hassancreates — Visual & Motion Designer Portfolio",
-      },
-    ],
   },
 
   twitter: {
@@ -105,7 +97,6 @@ export const metadata: Metadata = {
     description:
       "I turn ideas into visuals that stick. Portfolio of Hassan — Visual & Motion Designer based in London.",
     creator: "@hassancreates",
-    images: ["/og-image.png"],
   },
 
   robots: {
