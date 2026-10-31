@@ -19,7 +19,7 @@ const check = (ok, msg) => { console.log((ok ? "PASS " : "FAIL ") + msg); if (!o
   // accessible name = what screen readers announce (letter spans are aria-hidden)
   const h1 = await p1.locator("h1").first().ariaSnapshot();
   check(/I turn ideas into visuals that stick/.test(h1.replace(/\s+/g, " ")), `h1 readable as words: "${h1.replace(/\s+/g, " ").trim().slice(0, 60)}"`);
-  for (const s of ["Hassan", "Services", "Recent Works", "Archin"]) check(text.includes(s), `content includes "${s}"`);
+  for (const s of ["Hassan", "Services", "Recent Works", "Stance"]) check(text.includes(s), `content includes "${s}"`);
   const meta = await p1.evaluate(() => ({
     title: document.title,
     desc: document.querySelector('meta[name="description"]')?.content,
