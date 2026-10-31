@@ -173,15 +173,6 @@ body.modal-open {
   height: 100% !important;
 }
 
-/* ── Ambient cursor-follow orb ── */
-.ambient-glow {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(140px);
-  pointer-events: none;
-  z-index: 0;
-  will-change: transform;
-}
 
 /* ── Pill header underline on "Portfolio!" ── */
 .custom-underline {
@@ -217,16 +208,25 @@ body.modal-open {
   stroke-dashoffset: 0;
 }
 
-@media (pointer: fine) {
-  body, a, button, [role="button"], input, textarea, select {
-    cursor: none !important;
-  }
+/* Only hide the native cursor once CustomCursor has mounted and added the
+   class — if its JS fails, visitors keep a normal cursor. */
+html.has-custom-cursor body,
+html.has-custom-cursor a,
+html.has-custom-cursor button,
+html.has-custom-cursor [role="button"],
+html.has-custom-cursor input,
+html.has-custom-cursor textarea,
+html.has-custom-cursor select {
+  cursor: none !important;
 }
 
-.hero-glow {
-  background: radial-gradient(circle, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 70%);
-  filter: blur(90px);
+/* Tiled local grain texture (replaces 2848px hotlinked Framer image) */
+.noise-overlay {
+  background-image: url("/textures/noise.png");
+  background-repeat: repeat;
+  background-size: 256px 256px;
 }
+
 
 /* Sleek custom scrollbars for inner scrollable areas */
 .custom-scrollbar::-webkit-scrollbar,

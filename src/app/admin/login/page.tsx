@@ -62,8 +62,8 @@ export default function AdminLoginPage() {
       
       {/* Background gradient blobs */}
       <div className="absolute inset-0 pointer-events-none select-none overflow-hidden">
-        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-[#6B21D9]/6 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-[#6B21D9]/4 rounded-full blur-[100px]" />
+        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] rounded-full bg-[radial-gradient(closest-side,rgba(107,33,217,0.06),rgba(107,33,217,0))]" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-[radial-gradient(closest-side,rgba(107,33,217,0.04),rgba(107,33,217,0))]" />
       </div>
 
       {/* Grid texture overlay */}
@@ -96,7 +96,7 @@ export default function AdminLoginPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-[#141414] border border-white/7 rounded-2xl p-7 shadow-2xl shadow-black/60 backdrop-blur-xl">
+        <div className="bg-[#141414] border border-white/7 rounded-2xl p-7 shadow-2xl shadow-black/60">
           
           {/* Error message */}
           {error && (

@@ -11,8 +11,7 @@ import { Swiper as SwiperType } from "swiper";
 import "swiper/css";
 import "swiper/css/zoom";
 
-const NOISE_IMG =
-  "https://framerusercontent.com/images/hiGYz6grmhAHSeZuNKHEuchTGTw.png";
+import BlurredBg from "./BlurredBg";
 
 import { Project } from "@/types";
 import { PROJECTS_DATA } from "@/data/projects";
@@ -135,7 +134,7 @@ export default function PhotoViewer({ projectId, onClose }: PhotoViewerProps) {
 
   return (
     <motion.div
-      className="fixed inset-0 z-[1000] bg-white backdrop-blur-[25px] flex flex-col overflow-hidden touch-none font-kyiv-sans"
+      className="fixed inset-0 z-[1000] bg-white flex flex-col overflow-hidden touch-none font-kyiv-sans"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -145,29 +144,11 @@ export default function PhotoViewer({ projectId, onClose }: PhotoViewerProps) {
       onClick={handleOverlayClick}
       data-lenis-prevent
     >
-      {/* Background Image Wrap (matching SelectedWorks card) */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={data.bgImage}
-          srcSet={data.bgSrcSet}
-          alt="Background overlay"
-          className="block w-full h-full object-cover object-center blur-[28px] scale-[1.1]"
-          data-bg-image="true"
-        />
-      </div>
+      {/* Background image — cheap downscaled blur (matches SelectedWorks card) */}
+      <BlurredBg src={data.bgImage} srcSet={data.bgSrcSet} className="pointer-events-none" />
 
       {/* Noise Overlay */}
-      <div className="absolute inset-0 opacity-[0.18] pointer-events-none z-[1]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={NOISE_IMG}
-          alt=""
-          aria-hidden="true"
-          className="block w-full h-full object-fill"
-          data-noise-image="true"
-        />
-      </div>
+      <div className="noise-overlay absolute inset-0 opacity-[0.18] pointer-events-none z-[1]" aria-hidden="true" />
 
       {/* Blur Tint Overlay */}
       <div className="absolute inset-0 bg-[#f5f0ff]/50 z-[2] pointer-events-none" />

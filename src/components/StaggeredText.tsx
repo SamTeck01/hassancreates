@@ -38,17 +38,17 @@ export default function StaggeredText({
 
               const animationProps = isScroll
                 ? {
-                    whileInView: { opacity: 1, filter: "blur(0px)", y: 0 },
+                    whileInView: { opacity: 1, y: 0 },
                     viewport: { once, margin: "-50px" },
                   }
                 : {
-                    animate: { opacity: 1, filter: "blur(0px)", y: 0 },
+                    animate: { opacity: 1, y: 0 },
                   };
 
               return (
                 <motion.span
                   key={lIdx}
-                  initial={{ opacity: 0, filter: "blur(6px)", y: 15 }}
+                  initial={{ opacity: 0, y: 15 }}
                   {...animationProps}
                   transition={{
                     duration: 0.5,
@@ -57,7 +57,6 @@ export default function StaggeredText({
                   }}
                   style={{
                     display: "inline-block",
-                    willChange: "transform, opacity, filter",
                     ...letterStyle,
                   }}
                 >

@@ -50,7 +50,7 @@ function ImageStackPreview({ service, isMobile }: ImageStackPreviewProps) {
     >
       {/* Background shadow glow */}
       <div 
-        className="absolute w-[60px] h-[60px] md:w-[110px] md:h-[140px] bg-purple-500/5 filter blur-xl md:blur-2xl rounded-full" 
+        className="absolute w-[60px] h-[60px] md:w-[110px] md:h-[140px] rounded-full bg-[radial-gradient(closest-side,rgba(168,85,247,0.08),rgba(168,85,247,0))]" 
         style={{ transform: "translateZ(-30px)" }}
       />
 

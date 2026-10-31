@@ -9,8 +9,7 @@ const PhotoViewer = dynamic(() => import("./PhotoViewer"), {
 import { Project } from "@/types";
 import { PROJECTS_DATA } from "@/data/projects";
 
-const NOISE_IMG =
-  "https://framerusercontent.com/images/hiGYz6grmhAHSeZuNKHEuchTGTw.png";
+import BlurredBg from "./BlurredBg";
 
 function WorkCard({
   project,
@@ -36,7 +35,14 @@ function WorkCard({
   // Mobile exit: opacity only — no blur/scale/rotate, so the card stays a
   // cached GPU layer and the static bg blur is never re-rasterised per frame.
   const scale   = useTransform(scrollYProgress, [0, 1], [1, 0.80]);
-  const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [1, 0.4, 0]);
+  // Function form on purpose: framer-motion 12 hands keyframe-array opacity to a
+  // native ViewTimeline, which freezes on sticky elements (they never move
+  // through the viewport) — so the fade never ran. A function isn't
+  // offloaded, so it tracks scrollYProgress correctly. Opacity is still
+  // compositor-only, so this stays cheap on phones.
+  const opacity = useTransform(scrollYProgress, (v) =>
+    v < 0.5 ? 1 - v * 1.2 : 0.4 - (v - 0.5) * 0.8
+  );
   const rotate  = useTransform(scrollYProgress, [0, 1], [0, -8]); // tilt left
   const blurPx  = useTransform(scrollYProgress, [0, 1], [0, 8]);  // ≤8px per perf skill
   const filter  = useMotionTemplate`blur(${blurPx}px)`;
@@ -64,34 +70,11 @@ function WorkCard({
         {/* framer-148g6gm */}
         <div className="workCard relative rounded-[32px] overflow-hidden w-full min-h-[560px] flex flex-col min-[1440px]:min-h-[680px] max-[809px]:min-h-0">
 
-          {/* BG image — absolute fill */}
-          <div className="absolute inset-0 rounded-[inherit] z-0 overflow-hidden">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              decoding="auto"
-              width={2848}
-              height={1588}
-              sizes="(min-width: 1440px) max(max(min(100vw, 1920px) - 16px, 1px), 1px), (min-width: 810px) and (max-width: 1439.98px) max(max(min(100vw, 1920px) - 16px, 1px), 1px), (max-width: 809.98px) max(calc(min(100vw, 1920px) - 16px), 1px)"
-              srcSet={project.bgSrcSet}
-              src={project.bgImage}
-              alt="BG Image"
-              className="block w-full h-full rounded-[inherit] object-cover object-center blur-[28px] scale-[1.1]"
-            />
-          </div>
+          {/* BG image — blurred on a 1/8-size surface, then scaled up (cheap) */}
+          <BlurredBg src={project.bgImage} srcSet={project.bgSrcSet} />
 
-          {/* Noise overlay — framer-z3ltis */}
-          <div className="absolute inset-0 rounded-[inherit] opacity-[0.18] pointer-events-none z-[1]">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              decoding="auto"
-              width={2848}
-              height={1588}
-              src={NOISE_IMG}
-              alt=""
-              aria-hidden="true"
-              className="block w-full h-full rounded-[inherit] object-fill"
-            />
-          </div>
+          {/* Noise overlay — tiled local texture */}
+          <div className="noise-overlay absolute inset-0 rounded-[inherit] opacity-[0.18] pointer-events-none z-[1]" aria-hidden="true" />
 
           {/* Blur overlay — framer-1w7zods */}
           <div className="absolute inset-0 rounded-[inherit] bg-[#0c0c0c]/40 z-[2] pointer-events-none" />
@@ -110,23 +93,26 @@ function WorkCard({
               </div>
 
               {/* Brand — framer-1pir4kz */}
-              <div 
-                className="flex flex-col gap-3"
+              <button
+                type="button"
+                className="flex flex-col gap-3 text-left bg-transparent border-0 p-0 cursor-pointer"
                 onClick={() => onSelect(project.id)}
-                style={{ cursor: "pointer" }}
+                aria-label={`Open ${project.clientName} gallery`}
               >
 
                 {/* Counter row — framer-r999pn */}
                 <div className="flex flex-row items-center gap-0.5 pb-3 border-b border-white/20">
                   {/* framer-k15jqr */}
-                  <p className="font-kyiv-sans text-[13px] font-normal text-white m-0">{project.number}</p>
+                  <span className="font-kyiv-sans text-[13px] font-normal text-white m-0">{project.number}</span>
                   {/* framer-1eo6faf */}
-                  <p className="font-kyiv-sans text-[13px] font-normal text-white/64 m-0">&nbsp;/ {String(total).padStart(2, "0")}</p>
+                  <span className="font-kyiv-sans text-[13px] font-normal text-white/64 m-0">&nbsp;/ {String(total).padStart(2, "0")}</span>
                 </div>
 
                 {/* Client name h2 — framer-mtdgxz / framer-styles-preset-13pym41 */}
-                <h2
-                  className="font-kyiv font-normal leading-[0.95] tracking-[-0.03em] text-white m-0 max-[809px]:text-[clamp(28px,8vw,52px)]"
+                <span
+                  role="heading"
+                  aria-level={3}
+                  className="block font-kyiv font-normal leading-[0.95] tracking-[-0.03em] text-white m-0 max-[809px]:text-[clamp(28px,8vw,52px)]"
                   style={{
                     // Auto-shrink: base is 9vw but scales down by character count so long names fit
                     fontSize: `clamp(36px, ${Math.min(9, 72 / Math.max(project.clientName.length, 8))}vw, 130px)`,
@@ -139,8 +125,8 @@ function WorkCard({
                       </span>
                     ))}
                   </span>
-                </h2>
-              </div>
+                </span>
+              </button>
             </div>
 
             {/* RIGHT — framer-90jchk */}
@@ -169,7 +155,7 @@ function WorkCard({
                       sizes="(min-width: 1440px) 456px, (min-width: 810px) and (max-width: 1439.98px) 300px, (max-width: 809.98px) 300px"
                       srcSet={project.coverSrcSet}
                       src={project.coverImage}
-                      alt="Cover Image"
+                      alt={`${project.clientName} project cover`}
                       className="block w-full h-full rounded-[inherit] object-cover object-center"
                     />
                   </div>
@@ -227,9 +213,9 @@ function WorkCard({
   );
 }
 
-export default function SelectedWorks() {
+export default function SelectedWorks({ initialProjects }: { initialProjects?: Project[] }) {
   const [isMobile, setIsMobile] = useState(false);
-  const [projects, setProjects] = useState<Project[]>(PROJECTS_DATA);
+  const [projects, setProjects] = useState<Project[]>(initialProjects ?? PROJECTS_DATA);
   const [activePhotoProject, setActivePhotoProject] = useState<string | null>(null);
 
   useEffect(() => {
@@ -242,17 +228,17 @@ export default function SelectedWorks() {
   }, []);
 
   useEffect(() => {
-    // Dynamic fetch from Next.js API Route handler
+    // Server already provided DB data — no client refetch, no content flash.
+    if (initialProjects) return;
     fetch("/api/projects")
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
-          const sorted = [...data].sort((a, b) => a.number.localeCompare(b.number));
-          setProjects(sorted);
+          setProjects([...data].sort((a, b) => a.number.localeCompare(b.number)));
         }
       })
       .catch((err) => console.error("Failed to load projects from API:", err));
-  }, []);
+  }, [initialProjects]);
 
   return (
     /* framer-s0bx2r */

@@ -19,8 +19,11 @@ export default function CustomCursor() {
 
   useEffect(() => {
     if (isAdmin) return;
-    if (window.matchMedia("(pointer: coarse)").matches) return;
-    
+    if (!window.matchMedia("(pointer: fine)").matches) return;
+
+    // Hide the native cursor only now that the custom one is live (see globals.css)
+    document.documentElement.classList.add("has-custom-cursor");
+
     const move = (e: MouseEvent) => {
       x.set(e.clientX);
       y.set(e.clientY);
@@ -41,12 +44,13 @@ export default function CustomCursor() {
     window.addEventListener("mouseup", up);
     
     return () => {
+      document.documentElement.classList.remove("has-custom-cursor");
       window.removeEventListener("mousemove", move);
       window.removeEventListener("mouseover", over);
       window.removeEventListener("mousedown", down);
       window.removeEventListener("mouseup", up);
     };
-  }, [x, y]);
+  }, [x, y, isAdmin]);
 
   return (
     <motion.div
