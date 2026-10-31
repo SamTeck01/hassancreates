@@ -1,11 +1,13 @@
 "use server";
 
+import { isAdminRequest } from "@/lib/adminAuth";
 import { db } from "@/lib/db";
 import { messages } from "@/lib/db/schema";
 import { revalidatePath } from "next/cache";
 import { eq, desc } from "drizzle-orm";
 
 export async function getMessages() {
+  if (!(await isAdminRequest())) return [];
   try {
     const list = await db
       .select()
@@ -13,9 +15,9 @@ export async function getMessages() {
       .orderBy(desc(messages.receivedAt));
     
     // Convert Dates to ISO strings to make them safe for client component serialization
-    return (list as any[]).map((m: any) => ({
+    return list.map((m) => ({
       ...m,
-      receivedAt: (m.receivedAt as Date).toISOString(),
+      receivedAt: m.receivedAt.toISOString(),
     }));
   } catch (error) {
     console.error("Failed to fetch messages:", error);
@@ -24,6 +26,7 @@ export async function getMessages() {
 }
 
 export async function deleteMessage(id: number) {
+  if (!(await isAdminRequest())) return { success: false, error: "Unauthorized. Please log in again." };
   try {
     await db.delete(messages).where(eq(messages.id, id));
     revalidatePath("/admin/inbox");
@@ -36,6 +39,7 @@ export async function deleteMessage(id: number) {
 }
 
 export async function toggleMessageRead(id: number, currentReadStatus: boolean) {
+  if (!(await isAdminRequest())) return { success: false, error: "Unauthorized. Please log in again." };
   try {
     await db
       .update(messages)

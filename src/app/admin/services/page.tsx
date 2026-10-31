@@ -1,3 +1,4 @@
+import { asc } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { services } from "@/lib/db/schema";
 import { SERVICES_DATA } from "@/data/services";
@@ -6,9 +7,9 @@ import ServicesClient from "./ServicesClient";
 export const dynamic = "force-dynamic";
 
 export default async function ServicesPage() {
-  let dbServices: any[] = [];
+  let dbServices: (typeof services.$inferSelect)[] = [];
   try {
-    dbServices = await db.select().from(services);
+    dbServices = await db.select().from(services).orderBy(asc(services.num));
     if (!dbServices || dbServices.length === 0) {
       for (const s of SERVICES_DATA) {
         await db.insert(services).values({
@@ -17,7 +18,7 @@ export default async function ServicesPage() {
           image1: s.image1, image2: s.image2,
         });
       }
-      dbServices = await db.select().from(services);
+      dbServices = await db.select().from(services).orderBy(asc(services.num));
     }
   } catch {
     dbServices = SERVICES_DATA;

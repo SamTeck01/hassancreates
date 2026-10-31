@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 
 const TICKER_1_ITEMS = ["Motion Design", "Website Design", "Logo Design", "Brand Design"];
-const TICKER_2_ITEMS = ["Senior Designer", "10 Years of Experience", "Over 100 Customers"];
+const TICKER_2_ITEMS = ["Senior Designer", "4 Years of Experience", "Over 100 Customers"];
 
 // Duplicate the items to allow a seamless infinite loop
 const DUPLICATED_T1 = [...TICKER_1_ITEMS, ...TICKER_1_ITEMS, ...TICKER_1_ITEMS, ...TICKER_1_ITEMS];

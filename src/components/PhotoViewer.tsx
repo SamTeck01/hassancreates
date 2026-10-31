@@ -15,6 +15,7 @@ import BlurredBg from "./BlurredBg";
 
 import { Project } from "@/types";
 import { PROJECTS_DATA } from "@/data/projects";
+import { pauseSmoothScroll, resumeSmoothScroll } from "@/lib/smoothScroll";
 
 interface PhotoViewerProps {
   projectId: string;
@@ -27,7 +28,6 @@ export default function PhotoViewer({ projectId, onClose }: PhotoViewerProps) {
   });
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isZoomed, setIsZoomed] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -68,17 +68,13 @@ export default function PhotoViewer({ projectId, onClose }: PhotoViewerProps) {
     document.documentElement.classList.add("modal-open");
 
     // Pause Lenis smooth scroll
-    if (typeof window !== "undefined" && (window as any).lenis) {
-      (window as any).lenis.stop();
-    }
+    pauseSmoothScroll();
 
     return () => {
       document.body.classList.remove("modal-open");
       document.documentElement.classList.remove("modal-open");
       // Resume Lenis smooth scroll
-      if (typeof window !== "undefined" && (window as any).lenis) {
-        (window as any).lenis.start();
-      }
+      resumeSmoothScroll();
     };
   }, []);
 
@@ -263,12 +259,10 @@ export default function PhotoViewer({ projectId, onClose }: PhotoViewerProps) {
           }}
           onSlideChange={(swiper) => {
             setCurrentIndex(swiper.activeIndex);
-            setIsZoomed(false);
             setShowControls(true);
           }}
           onZoomChange={(swiper, scale) => {
             const zoomed = scale > 1;
-            setIsZoomed(zoomed);
             if (zoomed) {
               setShowControls(false);
             } else {

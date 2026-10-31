@@ -1,5 +1,6 @@
 "use server";
 
+import { isAdminRequest } from "@/lib/adminAuth";
 // ── Vercel Analytics — pull real human-only stats via REST API ────────────────
 // Vercel filters bots server-side before counting any view/visitor.
 // Requires: VERCEL_API_TOKEN + VERCEL_PROJECT_ID in env vars.
@@ -45,6 +46,9 @@ async function vercelFetch(path: string, token: string): Promise<Response> {
 }
 
 export async function getVercelAnalytics(): Promise<VercelAnalytics> {
+  if (!(await isAdminRequest())) {
+    return { views: 0, visitors: 0, viewsToday: 0, visitorsToday: 0, topPages: [], available: false };
+  }
   const token     = process.env.VERCEL_API_TOKEN;
   const projectId = process.env.VERCEL_PROJECT_ID;
 

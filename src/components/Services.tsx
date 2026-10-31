@@ -87,8 +87,8 @@ function ImageStackPreview({ service, isMobile }: ImageStackPreviewProps) {
         }}
         className="absolute w-[50px] h-[65px] md:w-[110px] md:h-[140px] bg-[#0E0E10] rounded-[8px] md:rounded-[12px] shadow-[0_8px_24px_rgba(0,0,0,0.1)] overflow-hidden border border-white/5 z-0"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         {service.image1 ? (
+          // eslint-disable-next-line @next/next/no-img-element -- admin-uploaded URLs of unknown host/size
           <img
             src={service.image1}
             alt={`${service.title} preview illustration`}
@@ -132,8 +132,8 @@ function ImageStackPreview({ service, isMobile }: ImageStackPreviewProps) {
         }}
         className="absolute w-[50px] h-[65px] md:w-[110px] md:h-[140px] bg-white rounded-[8px] md:rounded-[12px] shadow-[0_12px_30px_rgba(0,0,0,0.12)] overflow-hidden border border-neutral-200/40 z-10"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         {service.image2 ? (
+          // eslint-disable-next-line @next/next/no-img-element -- admin-uploaded URLs of unknown host/size
           <img
             src={service.image2}
             alt={`${service.title} preview mockup`}

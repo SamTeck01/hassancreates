@@ -1,9 +1,10 @@
 "use server";
 
+import { isAdminRequest } from "@/lib/adminAuth";
 import { db } from "@/lib/db";
 import { services } from "@/lib/db/schema";
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 
 // ── Input Validation Helpers ────────────────────────────────────────────────
 function sanitizeText(input: unknown, maxLength = 500): string {
@@ -35,6 +36,7 @@ export async function addService(data: {
   image1: string;
   image2: string;
 }) {
+  if (!(await isAdminRequest())) return { success: false, error: "Unauthorized. Please log in again." };
   const validationError = validateServicePayload(data as Record<string, unknown>);
   if (validationError) return { success: false, error: validationError };
 
@@ -67,6 +69,7 @@ export async function updateService(id: string, data: {
   image1: string;
   image2: string;
 }) {
+  if (!(await isAdminRequest())) return { success: false, error: "Unauthorized. Please log in again." };
   const validationError = validateServicePayload(data as Record<string, unknown>, false);
   if (validationError) return { success: false, error: validationError };
 
@@ -91,6 +94,7 @@ export async function updateService(id: string, data: {
 
 // ── Delete Service ───────────────────────────────────────────────────────────
 export async function deleteService(id: string) {
+  if (!(await isAdminRequest())) return { success: false, error: "Unauthorized. Please log in again." };
   try {
     await db.delete(services).where(eq(services.id, sanitizeText(id, 100)));
 
@@ -107,7 +111,7 @@ export async function deleteService(id: string) {
 // ── Get All Services ─────────────────────────────────────────────────────────
 export async function getServices() {
   try {
-    return await db.select().from(services);
+    return await db.select().from(services).orderBy(asc(services.num));
   } catch (error) {
     console.error("Failed to retrieve services:", error);
     return [];

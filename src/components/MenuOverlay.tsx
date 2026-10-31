@@ -2,6 +2,7 @@
 
 import React, { useEffect } from "react";
 import { motion } from "framer-motion";
+import { pauseSmoothScroll, resumeSmoothScroll } from "@/lib/smoothScroll";
 
 interface MenuOverlayProps {
   isOpen: boolean;
@@ -16,26 +17,20 @@ export default function MenuOverlay({ isOpen, onClose }: MenuOverlayProps) {
       document.documentElement.classList.add("modal-open");
 
       // Pause Lenis smooth scroll
-      if (typeof window !== "undefined" && (window as any).lenis) {
-        (window as any).lenis.stop();
-      }
+      pauseSmoothScroll();
     } else {
       document.body.classList.remove("modal-open");
       document.documentElement.classList.remove("modal-open");
 
       // Resume Lenis smooth scroll
-      if (typeof window !== "undefined" && (window as any).lenis) {
-        (window as any).lenis.start();
-      }
+      resumeSmoothScroll();
     }
 
     // Cleanup: always remove scroll lock class and resume Lenis scroll when unmounted
     return () => {
       document.body.classList.remove("modal-open");
       document.documentElement.classList.remove("modal-open");
-      if (typeof window !== "undefined" && (window as any).lenis) {
-        (window as any).lenis.start();
-      }
+      resumeSmoothScroll();
     };
   }, [isOpen]);
 
@@ -77,6 +72,13 @@ export default function MenuOverlay({ isOpen, onClose }: MenuOverlayProps) {
       }
       transition={{ duration: 0.35 }}
       data-lenis-prevent
+      // While closed the overlay is only faded out — make it unreachable for
+      // keyboard and screen readers too.
+      inert={!isOpen}
+      aria-hidden={!isOpen}
+      role="dialog"
+      aria-modal={isOpen}
+      aria-label="Site menu"
     >
       {/* Explicit Close (X) Button in Top Right */}
       <button

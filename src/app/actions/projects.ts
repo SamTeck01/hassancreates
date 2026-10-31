@@ -1,5 +1,6 @@
 "use server";
 
+import { isAdminRequest } from "@/lib/adminAuth";
 import { db } from "@/lib/db";
 import { projects } from "@/lib/db/schema";
 import { revalidatePath } from "next/cache";
@@ -65,6 +66,7 @@ export async function addProject(data: {
   bgImage?: string;
   bgSrcSet?: string;
 }) {
+  if (!(await isAdminRequest())) return { success: false, error: "Unauthorized. Please log in again." };
   const validationError = validateProjectPayload(data as Record<string, unknown>);
   if (validationError) return { success: false, error: validationError };
 
@@ -124,6 +126,7 @@ export async function updateProject(id: string, data: {
   bgImage?: string;
   bgSrcSet?: string;
 }) {
+  if (!(await isAdminRequest())) return { success: false, error: "Unauthorized. Please log in again." };
   const validationError = validateProjectPayload(data as Record<string, unknown>);
   if (validationError) return { success: false, error: validationError };
 
@@ -167,6 +170,7 @@ export async function updateProject(id: string, data: {
 
 // ── Delete Project ────────────────────────────────────────────────────────────
 export async function deleteProject(id: string) {
+  if (!(await isAdminRequest())) return { success: false, error: "Unauthorized. Please log in again." };
   try {
     await db.delete(projects).where(eq(projects.id, sanitizeText(id, 100)));
     

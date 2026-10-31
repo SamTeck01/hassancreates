@@ -6,10 +6,11 @@ export async function GET() {
     // =========================================================================
     // DATABASE FETCH QUERY (Neon Postgres + Drizzle ORM)
     // =========================================================================
-    const { db } = require("@/lib/db");
-    const { services } = require("@/lib/db/schema");
+    const { db } = await import("@/lib/db");
+    const { services } = await import("@/lib/db/schema");
+    const { asc } = await import("drizzle-orm");
     
-    let dbServices = await db.select().from(services);
+    let dbServices = await db.select().from(services).orderBy(asc(services.num));
     
     if (!dbServices || dbServices.length === 0) {
       console.log("Database services table is empty, seeding with initial services...");
@@ -24,7 +25,7 @@ export async function GET() {
           image2: s.image2,
         });
       }
-      dbServices = await db.select().from(services);
+      dbServices = await db.select().from(services).orderBy(asc(services.num));
     }
 
     return NextResponse.json(dbServices);

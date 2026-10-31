@@ -6,6 +6,13 @@ import type { Project } from "@/types";
  * data if the DB is unreachable. Shared by the home page (server render) and
  * /api/projects.
  */
+type ProjectRow = typeof import("@/lib/db/schema").projects.$inferSelect;
+
+/** DB rows use `null` for an empty bg srcset; the app type uses `undefined`. */
+export function rowToProject(r: ProjectRow): Project {
+  return { ...r, bgSrcSet: r.bgSrcSet ?? undefined };
+}
+
 export async function getProjects(): Promise<Project[]> {
   try {
     const { db } = await import("@/lib/db");
@@ -37,7 +44,7 @@ export async function getProjects(): Promise<Project[]> {
       rows = await db.select().from(projects);
     }
 
-    return ([...rows] as unknown as Project[]).sort((a, b) => a.number.localeCompare(b.number));
+    return rows.map(rowToProject).sort((a, b) => a.number.localeCompare(b.number));
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     if (msg.includes("TimeoutError") || msg.includes("fetch failed")) {

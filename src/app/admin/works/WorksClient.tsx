@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useStoredDraft } from "@/lib/useStoredDraft";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Briefcase02Icon, Delete01Icon, Link01Icon } from "@hugeicons/core-free-icons";
 import { addProject, updateProject, deleteProject } from "@/app/actions/projects";
+import { pauseSmoothScroll, resumeSmoothScroll } from "@/lib/smoothScroll";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Project {
@@ -20,15 +22,6 @@ interface Project {
   swiperImages: string[];
   imageCaptions: string[];
   bgImage?: string;
-}
-
-// ── Skeleton ──────────────────────────────────────────────────────────────────
-function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={`rounded-lg bg-white/5 relative overflow-hidden ${className}`} aria-hidden>
-      <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.4s_ease_infinite] bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-    </div>
-  );
 }
 
 // ── Image Upload Zone ─────────────────────────────────────────────────────────
@@ -127,17 +120,13 @@ function Modal({
     document.documentElement.classList.add("modal-open");
 
     // Pause Lenis smooth scroll
-    if (typeof window !== "undefined" && (window as any).lenis) {
-      (window as any).lenis.stop();
-    }
+    pauseSmoothScroll();
 
     return () => {
       document.body.classList.remove("modal-open");
       document.documentElement.classList.remove("modal-open");
       // Resume Lenis smooth scroll
-      if (typeof window !== "undefined" && (window as any).lenis) {
-        (window as any).lenis.start();
-      }
+      resumeSmoothScroll();
     };
   }, [open]);
 
@@ -200,7 +189,7 @@ function ConfirmDelete({
         </div>
         <h3 className="text-sm font-bold text-white mb-2">Confirm Delete</h3>
         <p className="text-xs text-white/45 mb-6 leading-relaxed">
-          Remove <strong className="text-white">{name}</strong>? This can't be undone.
+          Remove <strong className="text-white">{name}</strong>? This can&apos;t be undone.
         </p>
         <div className="flex gap-3 justify-center">
           <button onClick={onCancel} disabled={busy} className="px-4 py-2 text-xs font-semibold text-white/60 hover:text-white bg-white/5 hover:bg-white/8 border border-white/5 rounded-xl transition-colors">Cancel</button>
@@ -214,8 +203,14 @@ function ConfirmDelete({
 }
 
 // ── Draft Card ────────────────────────────────────────────────────────────────
+type ProjectDraft = Partial<{
+  fName: string; fYear: string; fRole: string; fServices: string; fDesc: string;
+  fTagline: string; fHref: string; fCover: string; fBg: string;
+  fSwiper: string[]; fCaptions: string[];
+}>;
+
 function DraftProjectCard({ draft, onEdit, onPublish, onDiscard, busy }: {
-  draft: { [key: string]: any };
+  draft: ProjectDraft;
   onEdit: () => void; onPublish: () => void; onDiscard: () => void; busy: boolean;
 }) {
   return (
@@ -241,7 +236,7 @@ function DraftProjectCard({ draft, onEdit, onPublish, onDiscard, busy }: {
       <div className="px-4 pb-4 flex gap-2">
         <button onClick={onEdit} className="flex-1 py-2 bg-[#6B21D9]/10 hover:bg-[#6B21D9]/20 border border-[#6B21D9]/20 text-[11px] font-semibold text-[#a78bfa] hover:text-white rounded-xl transition-colors">Edit</button>
         <button onClick={onPublish} disabled={busy} className="flex-1 py-2 bg-[#6B21D9] hover:bg-[#7c3aed] text-[11px] font-bold text-white rounded-xl transition-colors disabled:opacity-50">Publish</button>
-        <button onClick={onDiscard} className="p-2 bg-red-950/15 hover:bg-red-950/30 border border-red-900/10 hover:border-red-900/25 text-red-500 hover:text-red-400 rounded-xl transition-colors">
+        <button onClick={onDiscard} aria-label="Discard draft" title="Discard draft" className="p-2 bg-red-950/15 hover:bg-red-950/30 border border-red-900/10 hover:border-red-900/25 text-red-500 hover:text-red-400 rounded-xl transition-colors">
           <HugeiconsIcon icon={Delete01Icon} size={13} strokeWidth={2} />
         </button>
       </div>
@@ -275,17 +270,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
   const [fSwiper, setFSwiper] = useState<string[]>([]);
   const [fCaptions, setFCaptions] = useState<string[]>([]);
 
-  const [draft, setDraft] = useState<{ [key: string]: any } | null>(null);
-
-  // Load draft card from localStorage on mount
-  useEffect(() => {
-    const raw = typeof window !== "undefined" ? localStorage.getItem("hc-project-draft") : null;
-    if (!raw) return;
-    try {
-      const d = JSON.parse(raw);
-      if (d.fName || d.fDesc) setDraft(d);
-    } catch {}
-  }, []);
+  const [draft, setDraft] = useStoredDraft<ProjectDraft>("hc-project-draft", (d) => !!(d.fName || d.fDesc));
 
   const reset = () => {
     setFName(""); setFYear(""); setFRole(""); setFServices("");
@@ -296,7 +281,6 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
 
   const saveDraft = () => {
     const d = { fName, fYear, fRole, fServices, fDesc, fTagline, fHref, fCover, fBg, fSwiper, fCaptions };
-    localStorage.setItem("hc-project-draft", JSON.stringify(d));
     setDraft(d);
     setModalOpen(false);
   };
@@ -312,7 +296,6 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
   };
 
   const discardDraft = () => {
-    localStorage.removeItem("hc-project-draft");
     setDraft(null);
   };
 
@@ -325,7 +308,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
       const id = draft.fName.toLowerCase().replace(/[^a-z0-9]/g, "-") + "-" + Date.now().toString().slice(-4);
       const num = (list.length + 1).toString().padStart(2, "0");
       const payload = {
-        clientName: draft.fName, year: draft.fYear, role: draft.fRole,
+        clientName: draft.fName, year: draft.fYear ?? "", role: draft.fRole ?? "",
         services: (draft.fServices || "").split(",").map((s: string) => s.trim()).filter(Boolean),
         description: draft.fDesc, tagline: draft.fTagline || "", href: draft.fHref || "#",
         coverImage: draft.fCover, coverSrcSet: `${draft.fCover} 1024w`,
@@ -337,7 +320,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
       const r = await addProject(full);
       if (r.success) {
         setList((p) => [...p, full]);
-        localStorage.removeItem("hc-project-draft"); setDraft(null);
+        setDraft(null);
       } else alert(r.error || "Publish failed.");
     } catch { alert("Unexpected error."); }
     finally { setSubmitting(false); }
@@ -375,7 +358,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
         if (r.success) {
           setSuccess(true);
           setList((p) => p.map((x) => x.id === editing.id ? { ...x, ...payload } : x));
-          setTimeout(() => { setModalOpen(false); reset(); localStorage.removeItem("hc-project-draft"); setDraft(null); }, 1400);
+          setTimeout(() => { setModalOpen(false); reset(); setDraft(null); }, 1400);
         } else setError(r.error || "Update failed.");
       } else {
         const id = fName.toLowerCase().replace(/[^a-z0-9]/g, "-") + "-" + Date.now().toString().slice(-4);
@@ -385,7 +368,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
         if (r.success) {
           setSuccess(true);
           setList((p) => [...p, full]);
-          setTimeout(() => { setModalOpen(false); reset(); localStorage.removeItem("hc-project-draft"); setDraft(null); }, 1400);
+          setTimeout(() => { setModalOpen(false); reset(); setDraft(null); }, 1400);
         } else setError(r.error || "Failed.");
       }
     } catch { setError("Unexpected error."); }
@@ -470,7 +453,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
                 {/* Actions */}
                 <div className="px-4 pb-4 flex gap-2">
                   <button onClick={() => openEdit(p)} className="flex-grow py-2 bg-white/5 hover:bg-white/8 border border-white/5 text-[11px] font-semibold text-white/70 hover:text-white rounded-xl transition-colors">Edit</button>
-                  <button onClick={() => setToDelete(p)} className="p-2 bg-red-950/15 hover:bg-red-950/30 border border-red-900/10 hover:border-red-900/25 text-red-500 hover:text-red-400 rounded-xl transition-colors">
+                  <button onClick={() => setToDelete(p)} aria-label={`Delete ${p.clientName}`} title="Delete" className="p-2 bg-red-950/15 hover:bg-red-950/30 border border-red-900/10 hover:border-red-900/25 text-red-500 hover:text-red-400 rounded-xl transition-colors">
                     <HugeiconsIcon icon={Delete01Icon} size={13} strokeWidth={2} />
                   </button>
                   <a href={p.href} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/5 hover:bg-white/8 border border-white/5 text-white/30 hover:text-white rounded-xl transition-colors">

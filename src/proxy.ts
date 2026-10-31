@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import type { NextRequest, NextFetchEvent } from "next/server";
+import type { NextRequest } from "next/server";
+import { ADMIN_COOKIE, isAdminToken } from "@/lib/adminAuth";
 
 // ── Rate Limiting Store (in-memory, resets on cold start) ────────────────────
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -34,71 +35,11 @@ function checkRateLimit(
   return { allowed: entry.count <= max, remaining };
 }
 
-// ── Web Crypto signing helper for Edge Runtime ───────────────────────────────
-async function hmacSha256(message: string, secret: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const keyBuffer = encoder.encode(secret);
-  const messageBuffer = encoder.encode(message);
-
-  const key = await crypto.subtle.importKey(
-    "raw",
-    keyBuffer,
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-
-  const signature = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    messageBuffer
-  );
-
-  const hashArray = Array.from(new Uint8Array(signature));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-// Timing-safe equal for strings (constant-time comparison in pure JS)
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return result === 0;
-}
-
-// ── Session Token Validation ──────────────────────────────────────────────────
-async function isValidSession(token: string, secret: string): Promise<boolean> {
-  // Token format: "admin:<expires>:<hmac-sig>"
-  const parts = token.split(":");
-  if (parts.length !== 3) return false;
-
-  const [prefix, expiresStr, sig] = parts;
-  if (prefix !== "admin") return false;
-
-  const expires = parseInt(expiresStr, 10);
-  if (isNaN(expires) || Date.now() > expires) return false;
-
-  const payload = `admin:${expiresStr}`;
-  const expectedSig = await hmacSha256(payload, secret);
-
-  return timingSafeEqual(sig, expectedSig);
-}
-
 async function isAdminAuthorized(request: NextRequest): Promise<boolean> {
-  const sessionSecret = process.env.ADMIN_SESSION_SECRET;
-
-  // If no session secret configured, allow access (unconfigured dev environment)
-  if (!sessionSecret) return true;
-
-  const token = request.cookies.get("admin_session")?.value;
-  if (!token) return false;
-
-  return await isValidSession(token, sessionSecret);
+  return isAdminToken(request.cookies.get(ADMIN_COOKIE)?.value);
 }
 
-export async function proxy(request: NextRequest, event: NextFetchEvent) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // ── Stricter rate limiting on login endpoint ──────────────────────────────
@@ -112,6 +53,14 @@ export async function proxy(request: NextRequest, event: NextFetchEvent) {
       );
     }
     return NextResponse.next();
+  }
+
+  // ── Uploads are admin-only (they spend the Cloudinary quota) ─────────────
+  if (pathname === "/api/upload" && !(await isAdminAuthorized(request))) {
+    return new NextResponse(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   // ── Rate limiting on all API routes ───────────────────────────────────────

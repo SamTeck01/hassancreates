@@ -78,8 +78,9 @@ const nextConfig = {
               "base-uri 'self'",
               // All forms must submit to self
               "form-action 'self'",
-              // Upgrade insecure requests in production
-              "upgrade-insecure-requests",
+              // Upgrade insecure requests in production. Omitted only for the
+              // local Playwright build, which is served over plain http.
+              ...(process.env.E2E_LOCAL_HTTP ? [] : ["upgrade-insecure-requests"]),
             ].join("; "),
           },
         ],

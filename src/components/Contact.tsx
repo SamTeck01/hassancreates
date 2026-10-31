@@ -145,7 +145,7 @@ function ContactMarquee() {
 
 interface SocialLinkProps {
   href: string;
-  icon: any;
+  icon: React.ComponentProps<typeof HugeiconsIcon>["icon"];
   label: string;
 }
 

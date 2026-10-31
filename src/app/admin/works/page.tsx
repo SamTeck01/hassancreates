@@ -2,13 +2,15 @@ import { db } from "@/lib/db";
 import { projects } from "@/lib/db/schema";
 import { PROJECTS_DATA } from "@/data/projects";
 import WorksClient from "./WorksClient";
+import { rowToProject } from "@/lib/projects";
+import type { Project } from "@/types";
 
 export const dynamic = "force-dynamic";
 
 export default async function WorksPage() {
-  let dbProjects: any[] = [];
+  let dbProjects: Project[] = [];
   try {
-    dbProjects = await db.select().from(projects);
+    dbProjects = (await db.select().from(projects)).map(rowToProject);
     if (!dbProjects || dbProjects.length === 0) {
       for (const p of PROJECTS_DATA) {
         await db.insert(projects).values({
@@ -29,7 +31,7 @@ export default async function WorksPage() {
           bgSrcSet: p.bgSrcSet || `${p.bgImage || p.coverImage} 2048w`,
         });
       }
-      dbProjects = await db.select().from(projects);
+      dbProjects = (await db.select().from(projects)).map(rowToProject);
     }
     dbProjects.sort((a, b) => a.number.localeCompare(b.number));
   } catch {
