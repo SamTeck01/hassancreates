@@ -32,8 +32,9 @@ function WorkCard({
     offset: ["start start", "end start"],
   });
 
-  // Exit: shrink → tilt left → blur away over 60vh
-  // blur capped at 8px (fixing-motion-performance rule 7: never large-surface blur >8px)
+  // Desktop exit: shrink → tilt left → blur away (blur capped at 8px).
+  // Mobile exit: opacity only — no blur/scale/rotate, so the card stays a
+  // cached GPU layer and the static bg blur is never re-rasterised per frame.
   const scale   = useTransform(scrollYProgress, [0, 1], [1, 0.80]);
   const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [1, 0.4, 0]);
   const rotate  = useTransform(scrollYProgress, [0, 1], [0, -8]); // tilt left
@@ -44,14 +45,14 @@ function WorkCard({
     <motion.div
       ref={wrapperRef}
       id={project.id}
-      className="cardWrapper sticky w-full will-change-transform max-[809px]:!filter-none"
+      className={`cardWrapper sticky w-full max-[809px]:!filter-none ${isMobile ? "will-change-[opacity]" : "will-change-[transform,filter,opacity]"}`}
       style={{
         top: isMobile ? 64 : project.stickyTop,
         position: "sticky",
         zIndex: project.zIndex,
-        scale:   isLast ? 1 : scale,
+        scale:   isLast || isMobile ? 1 : scale,
         opacity: isLast ? 1 : opacity,
-        rotate:  isLast ? 0 : rotate,
+        rotate:  isLast || isMobile ? 0 : rotate,
         filter:  isMobile || isLast ? "none" : filter,
         // 60vh of scroll space for the full exit animation on desktop; tighter 40vh on mobile
         marginBottom: isLast ? 0 : (isMobile ? "10vh" : "20vh"),
@@ -133,7 +134,7 @@ function WorkCard({
                 >
                   <span className="whitespace-nowrap">
                     {project.clientName.split("").map((char, i) => (
-                      <span key={i} className="inline-block opacity-100 transform-none will-change-transform">
+                      <span key={i} className="inline-block">
                         {char}
                       </span>
                     ))}
@@ -232,10 +233,12 @@ export default function SelectedWorks() {
   const [activePhotoProject, setActivePhotoProject] = useState<string | null>(null);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 810);
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    // matchMedia only fires when crossing the breakpoint (no per-pixel resize work)
+    const mq = window.matchMedia("(max-width: 809.98px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
   }, []);
 
   useEffect(() => {
