@@ -25,7 +25,7 @@ export default defineConfig({
   },
   webServer: [
     {
-      // Stand-ins for Cloudinary + Resend so uploads and emails run end to end
+      // Stand-in for Cloudinary so uploads run end to end
       command: `node e2e/mock-services.mjs`,
       url: `${MOCK}/__requests`,
       reuseExistingServer: false,
@@ -43,8 +43,6 @@ export default defineConfig({
         CLOUDINARY_CLOUD_NAME: "e2e-cloud",
         CLOUDINARY_UPLOAD_PRESET: "e2e-preset",
         CLOUDINARY_API_BASE: MOCK,
-        RESEND_API_KEY: "re_e2e_local_only",
-        RESEND_BASE_URL: MOCK,
       },
     },
   ],

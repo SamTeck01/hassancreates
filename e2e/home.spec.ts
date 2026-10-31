@@ -147,3 +147,19 @@ test("custom cursor: hides native cursor only on desktop once mounted", async ({
   const has = await page.evaluate(() => document.documentElement.classList.contains("has-custom-cursor"));
   expect(has).toBe(!isMobile(page));
 });
+
+test("hero cycles through every title, incl. 'a Brand Designer', without overflowing", async ({ page }) => {
+  await page.goto("/", { waitUntil: "networkidle" });
+  const seen = new Set<string>();
+  const deadline = Date.now() + 15000;
+  while (Date.now() < deadline && seen.size < 4) {
+    const label = await page.locator('[aria-label="Hassan!"], [aria-label^="a "]').first().getAttribute("aria-label");
+    if (label) {
+      seen.add(label);
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      expect(overflow, `page overflows while showing "${label}"`).toBeLessThanOrEqual(0);
+    }
+    await page.waitForTimeout(100);
+  }
+  expect([...seen].sort()).toEqual(["Hassan!", "a Brand Designer", "a Motion Designer", "a Visual Designer"]);
+});

@@ -31,6 +31,8 @@ const SparkIcon = ({ isMobile }: { isMobile: boolean }) => (
   </motion.span>
 );
 
+const HERO_STATES = ["Hassan!", "a Motion Designer", "a Visual Designer", "a Brand Designer"];
+
 export default function Hero() {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollY } = useScroll();
@@ -67,7 +69,6 @@ export default function Hero() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const states = ["Hassan!", "a Motion Designer", "a Visual Designer"];
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -88,11 +89,11 @@ export default function Hero() {
 
     // Fast transitions (cycleCount < 6) for first 2 full loops (~400ms per state),
     // then slow transitions (~1500ms per state) indefinitely.
-    const isFastPhase = cycleCount < 6;
+    const isFastPhase = cycleCount < HERO_STATES.length * 2;
     const delay = isFastPhase ? 400 : 1500;
 
     const timer = setTimeout(() => {
-      setCurrentIndex((prev) => (prev + 1) % 3);
+      setCurrentIndex((prev) => (prev + 1) % HERO_STATES.length);
       setCycleCount((prev) => prev + 1);
     }, delay);
 
@@ -171,9 +172,9 @@ export default function Hero() {
 
           {/* Cycling text */}
           {prefersReducedMotion ? (
-            <span className="font-kyiv-serif font-medium">{states[currentIndex]}</span>
+            <span className="font-kyiv-serif font-medium">{HERO_STATES[currentIndex]}</span>
           ) : (
-            <span className="relative inline-flex overflow-hidden align-middle select-none justify-start" aria-label={states[currentIndex]}>
+            <span className="relative inline-flex overflow-hidden align-middle select-none justify-start" aria-label={HERO_STATES[currentIndex]}>
               <AnimatePresence mode="popLayout" initial={false}>
                 <motion.span
                   key={currentIndex}
@@ -183,7 +184,7 @@ export default function Hero() {
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                   className="font-kyiv font-medium text-[#6B21D9] pl-1 pr-1 inline-block whitespace-nowrap"
                 >
-                  {states[currentIndex]}
+                  {HERO_STATES[currentIndex]}
                 </motion.span>
               </AnimatePresence>
             </span>

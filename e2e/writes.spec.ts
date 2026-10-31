@@ -2,14 +2,13 @@
  * Real write tests: add + delete projects/services, uploads, contact form.
  * They write to the database the server uses, then clean up after themselves
  * (and a safety net removes anything tagged E2E even if a test fails).
- * Cloudinary + Resend are local stand-ins (e2e/mock-services.mjs); everything
+ * Cloudinary is a local stand-in (e2e/mock-services.mjs); everything
  * else — routes, auth, validation, DB, admin UI, public pages — is real.
  */
 import { test, expect, type Page, type APIRequestContext } from "@playwright/test";
 import { neon } from "@neondatabase/serverless";
 import { TEST_ADMIN, MOCK } from "../playwright.config";
 import { trackErrors } from "./helpers";
-import { escapeHtml } from "../src/lib/contactEmail";
 
 test.describe.configure({ mode: "serial" });
 test.beforeEach(({}, info) => test.skip(info.project.name !== "desktop", "writes run once (desktop)"));
@@ -157,10 +156,9 @@ test.describe("projects: add with uploads → shows on site → delete", () => {
   });
 });
 
-test.describe("contact form: real submit → DB → email → inbox → delete", () => {
-  test("end to end, with HTML in the message safely escaped", async ({ page, request }) => {
+test.describe("contact form: real submit → DB → inbox → delete", () => {
+  test("end to end; HTML in a message shows as plain text", async ({ page }) => {
     needsDbWrites();
-    await resetMock(request);
     const name = `${TAG} <b>Visitor</b>`;
     const message = `Hi Hassan!\n<a href="https://evil.example">click me</a>`;
 
@@ -171,33 +169,22 @@ test.describe("contact form: real submit → DB → email → inbox → delete",
     await page.locator('#contact button[type="submit"]').click();
     await expect(page.getByText("Message sent!")).toBeVisible();
 
-    // Email that would go to Hassan
-    const sent = (await mockRequests(request)).filter((r: { service: string }) => r.service === "resend");
-    expect(sent).toHaveLength(1);
-    const p = sent[0].payload;
-    expect(sent[0].auth).toBe("Bearer re_e2e_local_only");
-    expect([p.to].flat()).toContain("hassancreatess@gmail.com");
-    expect(JSON.stringify(p.reply_to ?? p.replyTo)).toContain("visitor@example.com");
-    expect(p.subject).toBe(`New project inquiry from ${name}`);
-    expect(p.html).not.toContain("<b>Visitor</b>");
-    expect(p.html).not.toContain('<a href="https://evil.example">');
-    expect(p.html).toContain(escapeHtml(name));
-    expect(p.html).toContain(escapeHtml('<a href="https://evil.example">click me</a>'));
-
     // Saved to the real DB and visible in the admin inbox
     await login(page);
     await page.goto("/admin/inbox", { waitUntil: "networkidle" });
     const row = page.getByText(name).first();
     await expect(row).toBeVisible();
     await row.click();
-    await expect(page.getByText("click me", { exact: false }).first()).toBeVisible();
+    // Shown as literal text in the inbox, never rendered as a real link
+    await expect(page.getByText('<a href="https://evil.example">click me</a>', { exact: false }).first()).toBeVisible();
+    await expect(page.locator('a[href="https://evil.example"]')).toHaveCount(0);
     await page.getByRole("button", { name: /Mark (un)?read/ }).click();
     await page.getByRole("button", { name: "Delete message" }).click();
     await expect(page.getByText(name)).toHaveCount(0);
     if (sql) expect((await sql`select count(*)::int as n from messages where name like ${TAG + "%"}`)[0].n).toBe(0);
   });
 
-  test("bad input rejected, overlong fields rejected, header injection stripped", async ({ request }) => {
+  test("bad input and overlong fields rejected", async ({ request }) => {
     const post = (data: object) => request.post("/api/contact", { data });
     expect((await post({ name: "", email: "a@b.co", description: "x" })).status()).toBe(400);
     expect((await post({ name: "A", email: "nope", description: "x" })).status()).toBe(400);

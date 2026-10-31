@@ -1,5 +1,5 @@
-// Local stand-ins for Cloudinary and Resend, used ONLY by the Playwright suite
-// (via CLOUDINARY_API_BASE / RESEND_BASE_URL). Records every request so tests
+// Local stand-in for Cloudinary, used ONLY by the Playwright suite
+// (via CLOUDINARY_API_BASE). Records every request so tests
 // can assert exactly what the app sent. GET /__requests returns them.
 import http from "node:http";
 
@@ -26,10 +26,6 @@ http.createServer((req, res) => {
         hasFile: /name="file"; filename=/.test(text), bytes: body.length,
       });
       return json(200, { secure_url: UPLOADED_URL });
-    }
-    if (req.method === "POST" && req.url === "/emails") {
-      requests.push({ service: "resend", auth: req.headers.authorization, payload: JSON.parse(body.toString("utf8")) });
-      return json(200, { id: "e2e-email-id" });
     }
     json(404, { error: "mock: unknown route " + req.url });
   });
