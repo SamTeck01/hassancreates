@@ -54,8 +54,29 @@ export async function POST(request: Request) {
     )
   }
 
-  const formData = await request.formData()
-  const file = formData.get("file") as File | null
+  // Reject oversize bodies up front. Bodies above the proxy buffer limit
+  // (10 MB by default) arrive truncated and would otherwise fail to parse.
+  const tooLarge = () =>
+    NextResponse.json(
+      { success: false, error: "File too large. Maximum allowed size is 10 MB." },
+      { status: 413 }
+    )
+  const declaredLength = Number(request.headers.get("content-length") ?? 0)
+  if (declaredLength > MAX_SIZE + 64 * 1024) return tooLarge()
+
+  let formData: FormData
+  try {
+    formData = await request.formData()
+  } catch {
+    return declaredLength > MAX_SIZE ? tooLarge() : NextResponse.json(
+      { success: false, error: "Could not read the upload." },
+      { status: 400 }
+    )
+  }
+  const file = formData.get("file")
+  if (file !== null && !(file instanceof File)) {
+    return NextResponse.json({ success: false, error: "No file received" }, { status: 400 })
+  }
 
   if (!file) {
     return NextResponse.json(
@@ -101,7 +122,8 @@ export async function POST(request: Request) {
   cloud.append("folder", "hassancreates")
 
   const res = await fetch(
-    `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+    // CLOUDINARY_API_BASE is only set by the local test suite (mock server)
+    `${process.env.CLOUDINARY_API_BASE ?? "https://api.cloudinary.com"}/v1_1/${cloudName}/image/upload`,
     { method: "POST", body: cloud }
   )
 

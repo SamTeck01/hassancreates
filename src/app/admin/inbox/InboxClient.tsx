@@ -166,6 +166,7 @@ export default function InboxClient({ initialMessages = [] }: { initialMessages?
                     onClick={() => toggleRead(selected.id)}
                     className="p-2 rounded-lg hover:bg-white/5 text-white/25 hover:text-[#6B21D9] transition-colors"
                     title={selected.read ? "Mark unread" : "Mark read"}
+                    aria-label={selected.read ? "Mark unread" : "Mark read"}
                   >
                     <HugeiconsIcon icon={Tick01Icon} size={14} strokeWidth={2} />
                   </button>
@@ -173,6 +174,7 @@ export default function InboxClient({ initialMessages = [] }: { initialMessages?
                     onClick={() => delMsg(selected.id)}
                     className="p-2 rounded-lg hover:bg-red-950/20 text-white/25 hover:text-red-400 transition-colors"
                     title="Delete"
+                    aria-label="Delete message"
                   >
                     <HugeiconsIcon icon={Delete01Icon} size={14} strokeWidth={2} />
                   </button>

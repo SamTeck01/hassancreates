@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { Resend } from "resend"
 import { db } from "@/lib/db"
 import { messages } from "@/lib/db/schema"
+import { CONTACT_LIMITS, oneLine, renderContactEmail } from "@/lib/contactEmail"
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null)
@@ -13,7 +14,20 @@ export async function POST(request: Request) {
     )
   }
 
-  const { name, email, description } = body
+  if (typeof body.name !== "string" || typeof body.email !== "string" || typeof body.description !== "string") {
+    return NextResponse.json({ success: false, error: "Invalid fields" }, { status: 400 })
+  }
+  const name = oneLine(body.name)
+  const email = body.email.trim()
+  const description = body.description.trim()
+  if (
+    !name || !description ||
+    name.length > CONTACT_LIMITS.name ||
+    email.length > CONTACT_LIMITS.email ||
+    description.length > CONTACT_LIMITS.description
+  ) {
+    return NextResponse.json({ success: false, error: "Field missing or too long" }, { status: 400 })
+  }
 
   // Basic email validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -52,26 +66,7 @@ export async function POST(request: Request) {
         to:   "hassancreatess@gmail.com",
         replyTo: email,
         subject: subjectLine,
-        html: `
-          <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:32px;background:#0c0c0c;color:#fff;border-radius:16px">
-            <h2 style="margin:0 0 24px;font-size:24px;font-weight:600">New project inquiry</h2>
-            <table style="width:100%;border-collapse:collapse">
-              <tr>
-                <td style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);font-size:13px;width:120px">Name</td>
-                <td style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.1);font-size:15px">${name}</td>
-              </tr>
-              <tr>
-                <td style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);font-size:13px">Email</td>
-                <td style="padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.1);font-size:15px"><a href="mailto:${email}" style="color:#a78bfa">${email}</a></td>
-              </tr>
-              <tr>
-                <td style="padding:12px 0;color:rgba(255,255,255,0.5);font-size:13px;vertical-align:top">Description</td>
-                <td style="padding:12px 0;font-size:15px;line-height:1.6;white-space:pre-wrap">${description}</td>
-              </tr>
-            </table>
-            <p style="margin:32px 0 0;font-size:12px;color:rgba(255,255,255,0.3)">Sent from hassancreates.com contact form</p>
-          </div>
-        `,
+        html: renderContactEmail({ name, email, description }),
       })
 
       if (error) {
