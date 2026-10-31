@@ -36,3 +36,11 @@ test("wrong admin password is rejected", async ({ request }) => {
 test("unknown page returns 404", async ({ request }) => {
   expect((await request.get("/this-page-does-not-exist")).status()).toBe(404);
 });
+
+test("contact email: built safely from visitor input", async () => {
+  const { renderContactEmail } = await import("../src/lib/contactEmail");
+  const html = renderContactEmail({ name: "<script>x</script>", email: 'a"@b.co', description: '<a href="https://evil.example">hi</a>' });
+  expect(html).not.toContain("<script>");
+  expect(html).not.toContain('<a href="https://evil.example">');
+  expect(html).toContain("&lt;script&gt;");
+});

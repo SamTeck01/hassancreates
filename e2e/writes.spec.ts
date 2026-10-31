@@ -2,13 +2,14 @@
  * Real write tests: add + delete projects/services, uploads, contact form.
  * They write to the database the server uses, then clean up after themselves
  * (and a safety net removes anything tagged E2E even if a test fails).
- * Cloudinary is a local stand-in (e2e/mock-services.mjs); everything
+ * Cloudinary + Resend are local stand-ins (e2e/mock-services.mjs); everything
  * else — routes, auth, validation, DB, admin UI, public pages — is real.
  */
 import { test, expect, type Page, type APIRequestContext } from "@playwright/test";
 import { neon } from "@neondatabase/serverless";
 import { TEST_ADMIN, MOCK } from "../playwright.config";
 import { trackErrors } from "./helpers";
+import { escapeHtml } from "../src/lib/contactEmail";
 
 test.describe.configure({ mode: "serial" });
 test.beforeEach(({}, info) => test.skip(info.project.name !== "desktop", "writes run once (desktop)"));
@@ -156,9 +157,10 @@ test.describe("projects: add with uploads → shows on site → delete", () => {
   });
 });
 
-test.describe("contact form: real submit → DB → inbox → delete", () => {
-  test("end to end; HTML in a message shows as plain text", async ({ page }) => {
+test.describe("contact form: real submit → DB inbox + email → delete", () => {
+  test("end to end: saved to inbox AND emailed to Hassan, HTML escaped", async ({ page, request }) => {
     needsDbWrites();
+    await resetMock(request);
     const name = `${TAG} <b>Visitor</b>`;
     const message = `Hi Hassan!\n<a href="https://evil.example">click me</a>`;
 
@@ -168,6 +170,17 @@ test.describe("contact form: real submit → DB → inbox → delete", () => {
     await page.getByPlaceholder("Type Here...").fill(message);
     await page.locator('#contact button[type="submit"]').click();
     await expect(page.getByText("Message sent!")).toBeVisible();
+
+    // Email sent to Hassan with the visitor as reply-to, markup escaped
+    const sent = (await mockRequests(request)).filter((r: { service: string }) => r.service === "resend");
+    expect(sent).toHaveLength(1);
+    const p = sent[0].payload;
+    expect([p.to].flat()).toContain("hassan-e2e@example.com");
+    expect(JSON.stringify(p.reply_to ?? p.replyTo)).toContain("visitor@example.com");
+    expect(p.subject).toBe(`New project inquiry from ${name}`);
+    expect(p.html).not.toContain("<b>Visitor</b>");
+    expect(p.html).not.toContain('<a href="https://evil.example">');
+    expect(p.html).toContain(escapeHtml('<a href="https://evil.example">click me</a>'));
 
     // Saved to the real DB and visible in the admin inbox
     await login(page);
