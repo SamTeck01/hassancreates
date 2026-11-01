@@ -139,7 +139,8 @@ test.describe("projects: add with uploads → shows on site → delete", () => {
 
     // Public site: new card + its gallery
     await page.goto("/", { waitUntil: "networkidle" });
-    const btn = page.getByRole("button", { name: `Open ${name} gallery` });
+    const card = page.locator(".cardWrapper").filter({ hasText: name }).first();
+    const btn = card.getByRole("button", { name: "Click to View" });
     await btn.scrollIntoViewIfNeeded();
     await btn.click();
     await expect(page.getByRole("dialog").getByRole("heading", { level: 1 })).toHaveText(name);

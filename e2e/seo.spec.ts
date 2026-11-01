@@ -10,7 +10,8 @@ test.describe("SEO (crawler view, JavaScript disabled)", () => {
     expect(text.length).toBeGreaterThan(1500);
     await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName("I turn ideas into visuals that stick.");
     const projects = await (await request.get("/api/projects")).json();
-    for (const p of projects) expect(text).toContain(p.clientName);
+    const nospace = (x: string) => x.replace(/\s+/g, "");
+    for (const p of projects) expect(nospace(text)).toContain(nospace(p.clientName));
     // textContent, not innerText: the marquee is CSS-uppercased
     const raw = await page.evaluate(() => document.body.textContent ?? "");
     for (const s of ["Services", "Recent Works", "4 Years of Experience"]) expect(raw).toContain(s);

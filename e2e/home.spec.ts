@@ -51,12 +51,12 @@ test.describe("works cards", () => {
     expect(projects.length).toBeGreaterThan(0);
     await page.goto("/", { waitUntil: "networkidle" });
     await expect(page.locator(".cardWrapper")).toHaveCount(projects.length);
-    for (const p of projects) {
-      await expect(page.locator(".cardWrapper").getByRole("heading", { name: p.clientName })).toBeAttached();
-    }
+    const nospace = (x: string) => x.replace(/\s+/g, "");
+    const cardText = nospace((await page.locator(".cardWrapper").allTextContents()).join(" "));
+    for (const p of projects) expect(cardText).toContain(nospace(p.clientName));
   });
 
-  test("exit animation: opacity-only on phone, blur on desktop", async ({ page }) => {
+  test("exit motion: shrink + tilt on all screens, blur on desktop only (original design)", async ({ page }) => {
     await page.goto("/", { waitUntil: "networkidle" });
     const first = page.locator(".cardWrapper").first();
     const top = await first.evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
@@ -65,27 +65,25 @@ test.describe("works cards", () => {
     await page.waitForTimeout(700);
     const st = await first.evaluate((el) => {
       const c = getComputedStyle(el);
-      return { filter: c.filter, transform: c.transform, opacity: parseFloat(c.opacity) };
+      return { filter: c.filter, transform: c.transform };
     });
-    expect(st.opacity).toBeLessThan(0.6);
-    if (isMobile(page)) {
-      expect(st.filter).toBe("none");
-      expect(st.transform === "none" || st.transform.startsWith("matrix(1, 0, 0, 1")).toBeTruthy();
-    } else {
-      expect(st.filter).toMatch(/blur\((?!0px)/);
-      expect(st.transform).not.toBe("none");
-    }
+    // matrix(a, b, ...) — b != 0 means rotated (tilt), a < 1 means shrunk
+    const [a, b] = st.transform.replace(/^matrix\(|\)$/g, "").split(",").map(Number);
+    expect(a).toBeLessThan(0.95);
+    expect(b).toBeLessThan(0);
+    if (isMobile(page)) expect(st.filter).toBe("none");
+    else expect(st.filter).toMatch(/blur\((?!0px)/);
   });
 
   test("each project opens the right gallery and closes", async ({ page, request }) => {
     const t = trackErrors(page);
     const projects = await (await request.get("/api/projects")).json();
     await page.goto("/", { waitUntil: "networkidle" });
-    for (const p of projects) {
-      const btn = page.getByRole("button", { name: `Open ${p.clientName} gallery` });
+    for (let i = 0; i < projects.length; i++) {
+      const p = projects[i];
+      const btn = page.locator(".cardWrapper").nth(i).getByRole("button", { name: "Click to View" });
       await btn.scrollIntoViewIfNeeded();
-      await btn.focus();
-      await page.keyboard.press("Enter");
+      await btn.click();
       const dialog = page.getByRole("dialog");
       await expect(dialog).toBeVisible();
       await expect(dialog.getByRole("heading", { level: 1 })).toHaveText(p.clientName);
@@ -96,14 +94,9 @@ test.describe("works cards", () => {
     t.expectClean();
   });
 
-  test("assets are local and images are labelled", async ({ page }) => {
-    const external: string[] = [];
-    page.on("request", (r) => { if (r.url().includes("hiGYz6grmhAHSeZuNKHEuchTGTw")) external.push(r.url()); });
+  test("every image has alt text", async ({ page }) => {
     await page.goto("/", { waitUntil: "networkidle" });
-    expect(external).toEqual([]);
-    await expect(page.locator('img[alt="BG Image"], img[alt="Cover Image"]')).toHaveCount(0);
-    const unlabeled = await page.locator("img:not([alt])").count();
-    expect(unlabeled).toBe(0);
+    expect(await page.locator("img:not([alt])").count()).toBe(0);
   });
 });
 

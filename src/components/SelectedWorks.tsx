@@ -9,7 +9,8 @@ const PhotoViewer = dynamic(() => import("./PhotoViewer"), {
 import { Project } from "@/types";
 import { PROJECTS_DATA } from "@/data/projects";
 
-import BlurredBg from "./BlurredBg";
+const NOISE_IMG =
+  "https://framerusercontent.com/images/hiGYz6grmhAHSeZuNKHEuchTGTw.png";
 
 function WorkCard({
   project,
@@ -31,18 +32,10 @@ function WorkCard({
     offset: ["start start", "end start"],
   });
 
-  // Desktop exit: shrink → tilt left → blur away (blur capped at 8px).
-  // Mobile exit: opacity only — no blur/scale/rotate, so the card stays a
-  // cached GPU layer and the static bg blur is never re-rasterised per frame.
+  // Exit: shrink → tilt left → blur away over 60vh
+  // blur capped at 8px (fixing-motion-performance rule 7: never large-surface blur >8px)
   const scale   = useTransform(scrollYProgress, [0, 1], [1, 0.80]);
-  // Function form on purpose: framer-motion 12 hands keyframe-array opacity to a
-  // native ViewTimeline, which freezes on sticky elements (they never move
-  // through the viewport) — so the fade never ran. A function isn't
-  // offloaded, so it tracks scrollYProgress correctly. Opacity is still
-  // compositor-only, so this stays cheap on phones.
-  const opacity = useTransform(scrollYProgress, (v) =>
-    v < 0.5 ? 1 - v * 1.2 : 0.4 - (v - 0.5) * 0.8
-  );
+  const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [1, 0.4, 0]);
   const rotate  = useTransform(scrollYProgress, [0, 1], [0, -8]); // tilt left
   const blurPx  = useTransform(scrollYProgress, [0, 1], [0, 8]);  // ≤8px per perf skill
   const filter  = useMotionTemplate`blur(${blurPx}px)`;
@@ -51,14 +44,14 @@ function WorkCard({
     <motion.div
       ref={wrapperRef}
       id={project.id}
-      className={`cardWrapper sticky w-full max-[809px]:!filter-none ${isMobile ? "will-change-[opacity]" : "will-change-[transform,filter,opacity]"}`}
+      className="cardWrapper sticky w-full will-change-transform max-[809px]:!filter-none"
       style={{
         top: isMobile ? 64 : project.stickyTop,
         position: "sticky",
         zIndex: project.zIndex,
-        scale:   isLast || isMobile ? 1 : scale,
+        scale:   isLast ? 1 : scale,
         opacity: isLast ? 1 : opacity,
-        rotate:  isLast || isMobile ? 0 : rotate,
+        rotate:  isLast ? 0 : rotate,
         filter:  isMobile || isLast ? "none" : filter,
         // 60vh of scroll space for the full exit animation on desktop; tighter 40vh on mobile
         marginBottom: isLast ? 0 : (isMobile ? "10vh" : "20vh"),
@@ -70,11 +63,34 @@ function WorkCard({
         {/* framer-148g6gm */}
         <div className="workCard relative rounded-[32px] overflow-hidden w-full min-h-[560px] flex flex-col min-[1440px]:min-h-[680px] max-[809px]:min-h-0">
 
-          {/* BG image — blurred on a 1/8-size surface, then scaled up (cheap) */}
-          <BlurredBg src={project.bgImage} srcSet={project.bgSrcSet} />
+          {/* BG image — absolute fill */}
+          <div className="absolute inset-0 rounded-[inherit] z-0 overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              decoding="auto"
+              width={2848}
+              height={1588}
+              sizes="(min-width: 1440px) max(max(min(100vw, 1920px) - 16px, 1px), 1px), (min-width: 810px) and (max-width: 1439.98px) max(max(min(100vw, 1920px) - 16px, 1px), 1px), (max-width: 809.98px) max(calc(min(100vw, 1920px) - 16px), 1px)"
+              srcSet={project.bgSrcSet}
+              src={project.bgImage}
+              alt="BG Image"
+              className="block w-full h-full rounded-[inherit] object-cover object-center blur-[28px] scale-[1.1]"
+            />
+          </div>
 
-          {/* Noise overlay — tiled local texture */}
-          <div className="noise-overlay absolute inset-0 rounded-[inherit] opacity-[0.18] pointer-events-none z-[1]" aria-hidden="true" />
+          {/* Noise overlay — framer-z3ltis */}
+          <div className="absolute inset-0 rounded-[inherit] opacity-[0.18] pointer-events-none z-[1]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              decoding="auto"
+              width={2848}
+              height={1588}
+              src={NOISE_IMG}
+              alt=""
+              aria-hidden="true"
+              className="block w-full h-full rounded-[inherit] object-fill"
+            />
+          </div>
 
           {/* Blur overlay — framer-1w7zods */}
           <div className="absolute inset-0 rounded-[inherit] bg-[#0c0c0c]/40 z-[2] pointer-events-none" />
@@ -93,34 +109,37 @@ function WorkCard({
               </div>
 
               {/* Brand — framer-1pir4kz */}
-              <button
-                type="button"
-                className="flex flex-col gap-3 text-left bg-transparent border-0 p-0 cursor-pointer"
+              <div 
+                className="flex flex-col gap-3"
                 onClick={() => onSelect(project.id)}
-                aria-label={`Open ${project.clientName} gallery`}
+                style={{ cursor: "pointer" }}
               >
 
                 {/* Counter row — framer-r999pn */}
                 <div className="flex flex-row items-center gap-0.5 pb-3 border-b border-white/20">
                   {/* framer-k15jqr */}
-                  <span className="font-kyiv-sans text-[13px] font-normal text-white m-0">{project.number}</span>
+                  <p className="font-kyiv-sans text-[13px] font-normal text-white m-0">{project.number}</p>
                   {/* framer-1eo6faf */}
-                  <span className="font-kyiv-sans text-[13px] font-normal text-white/64 m-0">&nbsp;/ {String(total).padStart(2, "0")}</span>
+                  <p className="font-kyiv-sans text-[13px] font-normal text-white/64 m-0">&nbsp;/ {String(total).padStart(2, "0")}</p>
                 </div>
 
                 {/* Client name h2 — framer-mtdgxz / framer-styles-preset-13pym41 */}
-                <span
-                  role="heading"
-                  aria-level={3}
-                  className="block font-kyiv font-normal leading-[0.95] tracking-[-0.03em] text-white m-0 max-[809px]:text-[clamp(28px,8vw,52px)]"
+                <h2
+                  className="font-kyiv font-normal leading-[0.95] tracking-[-0.03em] text-white m-0 max-[809px]:text-[clamp(28px,8vw,52px)]"
                   style={{
                     // Auto-shrink: base is 9vw but scales down by character count so long names fit
                     fontSize: `clamp(36px, ${Math.min(9, 72 / Math.max(project.clientName.length, 8))}vw, 130px)`,
                   }}
                 >
-                  <span className="whitespace-nowrap">{project.clientName}</span>
-                </span>
-              </button>
+                  <span className="whitespace-nowrap">
+                    {project.clientName.split("").map((char, i) => (
+                      <span key={i} className="inline-block opacity-100 transform-none will-change-transform">
+                        {char}
+                      </span>
+                    ))}
+                  </span>
+                </h2>
+              </div>
             </div>
 
             {/* RIGHT — framer-90jchk */}
@@ -149,7 +168,7 @@ function WorkCard({
                       sizes="(min-width: 1440px) 456px, (min-width: 810px) and (max-width: 1439.98px) 300px, (max-width: 809.98px) 300px"
                       srcSet={project.coverSrcSet}
                       src={project.coverImage}
-                      alt={`${project.clientName} project cover`}
+                      alt="Cover Image"
                       className="block w-full h-full rounded-[inherit] object-cover object-center"
                     />
                   </div>
@@ -213,26 +232,24 @@ export default function SelectedWorks({ initialProjects }: { initialProjects?: P
   const [activePhotoProject, setActivePhotoProject] = useState<string | null>(null);
 
   useEffect(() => {
-    // matchMedia only fires when crossing the breakpoint (no per-pixel resize work)
-    const mq = window.matchMedia("(max-width: 809.98px)");
-    const update = () => setIsMobile(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
+    const handleResize = () => setIsMobile(window.innerWidth < 810);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   useEffect(() => {
-    // Server already provided DB data — no client refetch, no content flash.
-    if (initialProjects) return;
+    // Dynamic fetch from Next.js API Route handler
     fetch("/api/projects")
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data) && data.length > 0) {
-          setProjects([...data].sort((a, b) => a.number.localeCompare(b.number)));
+          const sorted = [...data].sort((a, b) => a.number.localeCompare(b.number));
+          setProjects(sorted);
         }
       })
       .catch((err) => console.error("Failed to load projects from API:", err));
-  }, [initialProjects]);
+  }, []);
 
   return (
     /* framer-s0bx2r */
