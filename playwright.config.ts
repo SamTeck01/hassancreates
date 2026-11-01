@@ -10,7 +10,11 @@ const PORT = 3123;
 const LIVE_URL = process.env.LIVE_URL;
 export const MOCK_PORT = 3124;
 export const MOCK = `http://localhost:${MOCK_PORT}`;
-export const TEST_ADMIN = { username: "e2e-admin", password: "e2e-password-local-only" };
+// Live runs read the real admin login from the environment (never committed).
+export const TEST_ADMIN = {
+  username: process.env.E2E_ADMIN_USER ?? "e2e-admin",
+  password: process.env.E2E_ADMIN_PASS ?? "e2e-password-local-only",
+};
 
 export default defineConfig({
   testDir: "./e2e",
