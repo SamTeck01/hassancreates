@@ -71,11 +71,12 @@ export default function Header({ isMenuOpen, onToggleMenu }: HeaderProps) {
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 14.7255 3.09032 17.1962 4.85857 19C5.35248 19.5 5.25 20.5 4.5 21C3.89679 21.4 3 21 3 20" />
-              <circle cx="7.5" cy="10.5" r="1.5" fill="currentColor" />
-              <circle cx="11.5" cy="7.5" r="1.5" fill="currentColor" />
-              <circle cx="16.5" cy="9.5" r="1.5" fill="currentColor" />
-              <circle cx="15.5" cy="14.5" r="1.5" fill="currentColor" />
+              {/* Artist's palette: thumb notch on the lower right + paint spots */}
+              <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
+              <circle cx="13.5" cy="6.5" r="1.25" fill="currentColor" stroke="none" />
+              <circle cx="17.5" cy="10.5" r="1.25" fill="currentColor" stroke="none" />
+              <circle cx="8.5" cy="7.5" r="1.25" fill="currentColor" stroke="none" />
+              <circle cx="6.5" cy="12.5" r="1.25" fill="currentColor" stroke="none" />
             </svg>
           </motion.div>
         </button>
