@@ -45,9 +45,17 @@ export default function InboxClient({ initialMessages = [] }: { initialMessages?
   };
 
   const delMsg = async (id: number) => {
+    const prevMessages = messages;
+    const prevSelected = selected;
     setMessages((p) => p.filter((m) => m.id !== id));
     if (selected?.id === id) setSelected(null);
-    await deleteMessage(id);
+    const r = await deleteMessage(id).catch(() => ({ success: false, error: "Network error." }));
+    if (!r.success) {
+      // Server refused (e.g. session expired) — put it back and say why
+      setMessages(prevMessages);
+      setSelected(prevSelected);
+      alert(r.error || "Could not delete the message.");
+    }
   };
 
   const toggleRead = async (id: number) => {
@@ -57,7 +65,12 @@ export default function InboxClient({ initialMessages = [] }: { initialMessages?
     if (selected?.id === id) {
       setSelected((prev) => prev ? { ...prev, read: !prev.read } : null);
     }
-    await toggleMessageRead(id, msg.read);
+    const r = await toggleMessageRead(id, msg.read).catch(() => ({ success: false, error: "Network error." }));
+    if (!r.success) {
+      setMessages((p) => p.map((m) => m.id === id ? { ...m, read: msg.read } : m));
+      if (selected?.id === id) setSelected((prev) => prev ? { ...prev, read: msg.read } : null);
+      alert(r.error || "Could not update the message.");
+    }
   };
 
 

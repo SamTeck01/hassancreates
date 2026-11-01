@@ -425,10 +425,10 @@ export default function ServicesClient({ initialServices }: { initialServices: S
       <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? `Edit: ${editing.title}` : "Add New Service"}>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2"><label className={labelCls}>Title *</label><input className={inputCls} value={sTitle} onChange={(e) => setSTitle(e.target.value)} placeholder="UI/UX Design" required /></div>
-            <div><label className={labelCls}>Count</label><input className={inputCls} value={sCount} onChange={(e) => setSCount(e.target.value)} placeholder="(4)" /></div>
+            <div className="col-span-2"><label htmlFor="service-title" className={labelCls}>Title *</label><input id="service-title" className={inputCls} value={sTitle} onChange={(e) => setSTitle(e.target.value)} placeholder="UI/UX Design" required /></div>
+            <div><label htmlFor="service-count" className={labelCls}>Count</label><input id="service-count" className={inputCls} value={sCount} onChange={(e) => setSCount(e.target.value)} placeholder="(4)" /></div>
           </div>
-          <div><label className={labelCls}>Description *</label><textarea className={`${inputCls} h-28 resize-none`} value={sDesc} onChange={(e) => setSDesc(e.target.value)} placeholder="What does this service include?" required /></div>
+          <div><label htmlFor="service-description" className={labelCls}>Description *</label><textarea id="service-description" className={`${inputCls} h-28 resize-none`} value={sDesc} onChange={(e) => setSDesc(e.target.value)} placeholder="What does this service include?" required /></div>
           <div className="grid grid-cols-2 gap-3">
             <ImageUploadZone
               label="Preview Image 1"

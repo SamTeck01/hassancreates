@@ -474,16 +474,16 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
       >
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-3">
-            <div><label className={labelCls}>Client Name *</label><input className={inputCls} value={fName} onChange={(e) => setFName(e.target.value)} placeholder="e.g. Archin" required /></div>
-            <div><label className={labelCls}>Year *</label><input className={inputCls} value={fYear} onChange={(e) => setFYear(e.target.value)} placeholder="2026" required /></div>
+            <div><label htmlFor="project-client-name" className={labelCls}>Client Name *</label><input id="project-client-name" className={inputCls} value={fName} onChange={(e) => setFName(e.target.value)} placeholder="e.g. Archin" required /></div>
+            <div><label htmlFor="project-year" className={labelCls}>Year *</label><input id="project-year" className={inputCls} value={fYear} onChange={(e) => setFYear(e.target.value)} placeholder="2026" required /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label className={labelCls}>Role *</label><input className={inputCls} value={fRole} onChange={(e) => setFRole(e.target.value)} placeholder="Lead Designer" required /></div>
-            <div><label className={labelCls}>URL / Href *</label><input className={inputCls} value={fHref} onChange={(e) => setFHref(e.target.value)} placeholder="./works/archin" required /></div>
+            <div><label htmlFor="project-role" className={labelCls}>Role *</label><input id="project-role" className={inputCls} value={fRole} onChange={(e) => setFRole(e.target.value)} placeholder="Lead Designer" required /></div>
+            <div><label htmlFor="project-url-href" className={labelCls}>URL / Href *</label><input id="project-url-href" className={inputCls} value={fHref} onChange={(e) => setFHref(e.target.value)} placeholder="./works/archin" required /></div>
           </div>
-          <div><label className={labelCls}>Services (comma-separated)</label><input className={inputCls} value={fServices} onChange={(e) => setFServices(e.target.value)} placeholder="Branding, UI/UX, Motion" /></div>
-          <div><label className={labelCls}>Description *</label><textarea className={`${inputCls} h-20 resize-none`} value={fDesc} onChange={(e) => setFDesc(e.target.value)} placeholder="Brief project summary…" required /></div>
-          <div><label className={labelCls}>Tagline *</label><textarea className={`${inputCls} h-20 resize-none`} value={fTagline} onChange={(e) => setFTagline(e.target.value)} placeholder="Expanded detail for the project view…" required /></div>
+          <div><label htmlFor="project-services-comma-separated" className={labelCls}>Services (comma-separated)</label><input id="project-services-comma-separated" className={inputCls} value={fServices} onChange={(e) => setFServices(e.target.value)} placeholder="Branding, UI/UX, Motion" /></div>
+          <div><label htmlFor="project-description" className={labelCls}>Description *</label><textarea id="project-description" className={`${inputCls} h-20 resize-none`} value={fDesc} onChange={(e) => setFDesc(e.target.value)} placeholder="Brief project summary…" required /></div>
+          <div><label htmlFor="project-tagline" className={labelCls}>Tagline *</label><textarea id="project-tagline" className={`${inputCls} h-20 resize-none`} value={fTagline} onChange={(e) => setFTagline(e.target.value)} placeholder="Expanded detail for the project view…" required /></div>
           <div className="grid grid-cols-2 gap-3">
             <ImageUploadZone label="Cover Image *" value={fCover} onChange={setFCover} required />
             <ImageUploadZone label="Background Image" value={fBg} onChange={setFBg} />

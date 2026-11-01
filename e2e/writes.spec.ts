@@ -83,8 +83,8 @@ test.describe("services: add → shows on site → delete", () => {
     await page.goto("/admin/services", { waitUntil: "networkidle" });
     await page.getByRole("button", { name: "+ Add Service" }).click();
     const modal = page.locator("form").filter({ has: page.getByRole("button", { name: "Add Service", exact: true }) });
-    await modal.locator("input").first().fill(title);
-    await modal.locator("textarea").first().fill("Created by the automated test suite.");
+    await modal.getByLabel("Title *").fill(title);
+    await modal.getByLabel("Description *").fill("Created by the automated test suite.");
     await modal.locator('input[type="file"]').first().setInputFiles({ name: "p1.png", mimeType: "image/png", buffer: PNG });
     await expect(modal.getByText(".png").first()).toBeVisible(); // uploaded preview chip
     await modal.getByRole("button", { name: "Add Service", exact: true }).click();
@@ -120,15 +120,13 @@ test.describe("projects: add with uploads → shows on site → delete", () => {
     await page.goto("/admin/works", { waitUntil: "networkidle" });
     await page.getByRole("button", { name: /Upload Project|Add Project|\+ /i }).first().click();
     const form = page.locator("form").filter({ has: page.getByRole("button", { name: "Upload Project" }) });
-    await form.getByPlaceholder(/./).first().fill(name);
-    const fill = async (label: string, value: string) =>
-      form.locator("div", { has: page.locator("label", { hasText: label }) }).locator("input, textarea").first().fill(value);
-    await fill("Year *", "2026");
-    await fill("Role *", "Lead Designer");
-    await fill("URL / Href *", "https://example.com");
-    await fill("Services (comma-separated)", "Branding, Web");
-    await fill("Description *", "Created by the automated test suite.");
-    await fill("Tagline *", "Test tagline.");
+    await form.getByLabel("Client Name *").fill(name);
+    await form.getByLabel("Year *").fill("2026");
+    await form.getByLabel("Role *").fill("Lead Designer");
+    await form.getByLabel("URL / Href *").fill("https://example.com");
+    await form.getByLabel("Services (comma-separated)").fill("Branding, Web");
+    await form.getByLabel("Description *").fill("Created by the automated test suite.");
+    await form.getByLabel("Tagline *").fill("Test tagline.");
     await form.locator('input[type="file"]').first().setInputFiles({ name: "cover.png", mimeType: "image/png", buffer: PNG });
     await expect(form.getByText(/\.png/).first()).toBeVisible();
     await form.getByRole("button", { name: "Upload Project" }).click();
@@ -194,7 +192,8 @@ test.describe("contact form: real submit → DB inbox + email → delete", () =>
     await page.getByRole("button", { name: /Mark (un)?read/ }).click();
     await page.getByRole("button", { name: "Delete message" }).click();
     await expect(page.getByText(name)).toHaveCount(0);
-    if (sql) expect((await sql`select count(*)::int as n from messages where name like ${TAG + "%"}`)[0].n).toBe(0);
+    // Really deleted on the server (not just hidden in the UI)
+    if (sql) await expect.poll(async () => (await sql`select count(*)::int as n from messages where name like ${TAG + "%"}`)[0].n).toBe(0);
   });
 
   test("bad input and overlong fields rejected", async ({ request }) => {

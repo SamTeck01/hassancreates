@@ -62,8 +62,8 @@ test("drafts persist in the browser and can be discarded", async ({ page }) => {
   await login(page);
   await page.goto("/admin/services", { waitUntil: "networkidle" });
   await page.getByRole("button", { name: /Add Service/ }).first().click();
-  await page.locator("input").first().fill("E2E Draft Service");
-  await page.locator("textarea").first().fill("Draft description");
+  await page.getByLabel("Title *").fill("E2E Draft Service");
+  await page.getByLabel("Description *").fill("Draft description");
   await page.getByRole("button", { name: "Save Draft" }).click();
   await expect(page.getByText("E2E Draft Service")).toBeVisible();
   await page.reload({ waitUntil: "networkidle" });
