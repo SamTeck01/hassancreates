@@ -71,3 +71,11 @@ test("drafts persist in the browser and can be discarded", async ({ page }) => {
   await page.getByRole("button", { name: "Discard draft" }).click();
   await expect(page.getByText("E2E Draft Service")).toHaveCount(0);
 });
+
+test("inbox 'Send test email' reports the result", async ({ page }) => {
+  await login(page);
+  await page.goto("/admin/inbox", { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Send test email" }).click();
+  await expect(page.getByRole("status")).toHaveText(/Test email sent|Email not sent/, { timeout: 20000 });
+  console.log("email check:", await page.getByRole("status").textContent());
+});

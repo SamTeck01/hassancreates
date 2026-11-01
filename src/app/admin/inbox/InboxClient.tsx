@@ -73,9 +73,41 @@ export default function InboxClient({ initialMessages = [] }: { initialMessages?
     }
   };
 
+  const [emailCheck, setEmailCheck] = useState<{ busy: boolean; text: string; ok?: boolean }>({ busy: false, text: "" });
+  const sendTestEmail = async () => {
+    setEmailCheck({ busy: true, text: "Sending…" });
+    try {
+      const r = await fetch("/api/admin/test-email", { method: "POST" }).then((x) => x.json());
+      setEmailCheck({
+        busy: false,
+        ok: r.ok,
+        text: r.ok
+          ? `✓ Test email sent to ${r.config.to}. Check that inbox (and spam).`
+          : `✗ Email not sent: ${r.error}${r.config ? ` (from: ${r.config.from}, to: ${r.config.to})` : ""}`,
+      });
+    } catch {
+      setEmailCheck({ busy: false, ok: false, text: "✗ Could not reach the server." });
+    }
+  };
 
   return (
     <div className="text-white">
+      {/* Email notifications check */}
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <button
+          onClick={sendTestEmail}
+          disabled={emailCheck.busy}
+          className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 disabled:opacity-50"
+        >
+          {emailCheck.busy ? "Sending…" : "Send test email"}
+        </button>
+        {emailCheck.text && (
+          <span role="status" className={`text-xs ${emailCheck.ok ? "text-emerald-400" : emailCheck.ok === false ? "text-red-400" : "text-white/50"}`}>
+            {emailCheck.text}
+          </span>
+        )}
+      </div>
+
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
         <div className="bg-[#161616] border border-white/6 rounded-2xl p-5 flex flex-col gap-2">

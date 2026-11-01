@@ -49,3 +49,7 @@ test("public data is never rate-limited (shared mobile IPs)", async ({ request }
   const statuses = await Promise.all(Array.from({ length: 80 }, () => request.get("/api/services").then((r) => r.status())));
   expect(statuses.filter((s) => s === 429)).toHaveLength(0);
 });
+
+test("test-email endpoint requires login", async ({ request }) => {
+  expect((await request.post("/api/admin/test-email")).status()).toBe(401);
+});
