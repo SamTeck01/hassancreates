@@ -6,6 +6,8 @@ import { defineConfig, devices } from "@playwright/test";
  * local test server — they are not the production admin login.
  */
 const PORT = 3123;
+/** Set LIVE_URL to run the public tests against a deployed site (no local server). */
+const LIVE_URL = process.env.LIVE_URL;
 export const MOCK_PORT = 3124;
 export const MOCK = `http://localhost:${MOCK_PORT}`;
 export const TEST_ADMIN = { username: "e2e-admin", password: "e2e-password-local-only" };
@@ -19,11 +21,11 @@ export default defineConfig({
   reporter: [["list"]],
   timeout: 60_000,
   use: {
-    baseURL: `http://localhost:${PORT}`,
+    baseURL: LIVE_URL ?? `http://localhost:${PORT}`,
     trace: "retain-on-failure",
     // Production Vercel Analytics script 404s locally — not a site bug.
   },
-  webServer: [
+  webServer: LIVE_URL ? undefined : [
     {
       // Stand-ins for Cloudinary + Resend so uploads and emails run end to end
       command: `node e2e/mock-services.mjs`,
