@@ -17,6 +17,7 @@ function sanitizeUrl(input: unknown): string {
   const trimmed = input.trim();
   // Only allow relative paths or http/https URLs — block javascript: and data: URIs
   if (
+    trimmed === "#" ||
     trimmed.startsWith("./") ||
     trimmed.startsWith("/") ||
     trimmed.startsWith("http://") ||
@@ -42,8 +43,8 @@ function validateProjectPayload(data: Record<string, unknown>): string | null {
   if (!sanitizeText(data.year, 10)) return "Year is required.";
   if (!sanitizeText(data.role, 200)) return "Role is required.";
   if (!sanitizeText(data.description, 2000)) return "Description is required.";
-  if (!sanitizeText(data.tagline, 2000)) return "Tagline is required.";
-  if (!sanitizeUrl(data.href)) return "Valid project URL is required.";
+  // tagline and link are optional (the form fills sensible defaults)
+  if (data.href && data.href !== "#" && !sanitizeUrl(data.href)) return "Project link must start with http(s):// or /.";
   if (!sanitizeImageUrl(data.coverImage)) return "Valid cover image URL is required.";
   return null;
 }

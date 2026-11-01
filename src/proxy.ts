@@ -63,8 +63,11 @@ export async function proxy(request: NextRequest) {
     });
   }
 
-  // ── Rate limiting on all API routes ───────────────────────────────────────
-  if (pathname.startsWith("/api/")) {
+  // ── Rate limiting on API routes that change things ────────────────────────
+  // Read-only GETs (/api/projects, /api/services) are loaded on every page
+  // view; limiting them per IP broke the site for visitors sharing one IP
+  // (mobile carriers / offices behind NAT).
+  if (pathname.startsWith("/api/") && request.method !== "GET" && request.method !== "HEAD") {
     const key = getRateLimitKey(request);
     const { allowed, remaining } = checkRateLimit(rateLimitMap, key, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS);
 

@@ -44,3 +44,8 @@ test("contact email: built safely from visitor input", async () => {
   expect(html).not.toContain('<a href="https://evil.example">');
   expect(html).toContain("&lt;script&gt;");
 });
+
+test("public data is never rate-limited (shared mobile IPs)", async ({ request }) => {
+  const statuses = await Promise.all(Array.from({ length: 80 }, () => request.get("/api/services").then((r) => r.status())));
+  expect(statuses.filter((s) => s === 429)).toHaveLength(0);
+});

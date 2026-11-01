@@ -110,32 +110,54 @@ test.describe("services: add → shows on site → delete", () => {
 });
 
 test.describe("projects: add with uploads → shows on site → delete", () => {
-  test("full lifecycle through the admin UI", async ({ page, request }) => {
+  test("full lifecycle through the admin UI (one image box)", async ({ page, request }) => {
     needsDbWrites();
     const t = trackErrors(page);
     const before = await (await request.get("/api/projects")).json();
     const name = `${TAG} Project`;
+    await resetMock(request); // upload counter starts at 1 for this test
 
     await login(page);
     await page.goto("/admin/works", { waitUntil: "networkidle" });
-    await page.getByRole("button", { name: /Upload Project|Add Project|\+ /i }).first().click();
+    await page.getByRole("button", { name: "+ Upload Project" }).click();
     const form = page.locator("form").filter({ has: page.getByRole("button", { name: "Upload Project" }) });
-    await form.getByLabel("Client Name *").fill(name);
-    await form.getByLabel("Year *").fill("2026");
-    await form.getByLabel("Role *").fill("Lead Designer");
-    await form.getByLabel("URL / Href *").fill("https://example.com");
-    await form.getByLabel("Services (comma-separated)").fill("Branding, Web");
-    await form.getByLabel("Description *").fill("Created by the automated test suite.");
-    await form.getByLabel("Tagline *").fill("Test tagline.");
-    await form.locator('input[type="file"]').first().setInputFiles({ name: "cover.png", mimeType: "image/png", buffer: PNG });
-    await expect(form.getByText(/\.png/).first()).toBeVisible();
+    await expect(form.getByLabel("Year *")).toHaveValue(String(new Date().getFullYear())); // pre-filled
+    await form.getByLabel("Project / client name *").fill(name);
+    await form.getByLabel("Your role *").fill("Lead Designer");
+    await form.getByLabel("Services").fill("Branding, Web");
+    await form.getByLabel(/Short description/).fill("Created by the automated test suite.");
+
+    // Upload three images in one go
+    await form.getByTestId("project-images-input").setInputFiles([
+      { name: "a.png", mimeType: "image/png", buffer: PNG },
+      { name: "b.png", mimeType: "image/png", buffer: PNG },
+      { name: "c.png", mimeType: "image/png", buffer: PNG },
+    ]);
+    const tiles = form.getByTestId("project-image");
+    await expect(tiles).toHaveCount(3);
+    // Defaults: first image is card image + background
+    await expect(tiles.nth(0).getByText("CARD IMAGE", { exact: true })).toBeVisible();
+    await expect(tiles.nth(0).getByText("BACKGROUND", { exact: true })).toBeVisible();
+    // Pick image 2 as background, take image 3 out of the gallery, caption image 1
+    await tiles.nth(1).getByRole("button", { name: "Use as background" }).click();
+    await tiles.nth(2).getByRole("button", { name: "✓ In gallery" }).click();
+    await form.getByLabel("Caption for image 1").fill("Hero shot");
+    // Reorder: move image 2 left, then back
+    await form.getByRole("button", { name: "Move image 2 left" }).click();
+    await form.getByRole("button", { name: "Move image 1 right" }).click();
+
     await form.getByRole("button", { name: "Upload Project" }).click();
     await expect(page.getByText(name).first()).toBeVisible({ timeout: 15000 });
 
     const mid = await (await request.get("/api/projects")).json();
     const created = mid.find((p: { clientName: string }) => p.clientName === name);
     expect(created, "project saved to DB").toBeTruthy();
-    expect(created.coverImage).toMatch(/^https:\/\/res\.cloudinary\.com\//);
+    expect(created.coverImage).toMatch(/\?e2e=1$/);
+    expect(created.bgImage).toMatch(/\?e2e=2$/);
+    expect(created.swiperImages.map((u: string) => u.slice(-6))).toEqual(["?e2e=1", "?e2e=2"]); // image 3 left out
+    expect(created.imageCaptions).toEqual(["Hero shot", ""]);
+    expect(created.tagline).toBe("Created by the automated test suite."); // falls back to description
+    expect(created.href).toBe("#");
 
     // Public site: new card + its gallery
     await page.goto("/", { waitUntil: "networkidle" });
@@ -146,8 +168,21 @@ test.describe("projects: add with uploads → shows on site → delete", () => {
     await expect(page.getByRole("dialog").getByRole("heading", { level: 1 })).toHaveText(name);
     await page.keyboard.press("Escape");
 
-    // Delete
+    // Edit: shows all 3 images again (cover/bg included), remove the background → falls back to card image
     await page.goto("/admin/works", { waitUntil: "networkidle" });
+    const article = page.locator("article").filter({ hasText: name });
+    await article.getByRole("button", { name: "Edit" }).click();
+    const editForm = page.locator("form").filter({ has: page.getByRole("button", { name: "Save Changes" }) });
+    await expect(editForm.getByTestId("project-image")).toHaveCount(2); // the 2 gallery images (cover+bg are among them)
+    await editForm.getByRole("button", { name: "Remove image 2" }).click();
+    await expect(editForm.getByTestId("project-image").first().getByText("BACKGROUND", { exact: true })).toBeVisible();
+    await editForm.getByRole("button", { name: "Save Changes" }).click();
+    await expect(editForm).toBeHidden({ timeout: 10000 });
+    const edited = (await (await request.get("/api/projects")).json()).find((p: { clientName: string }) => p.clientName === name);
+    expect(edited.bgImage).toBe(edited.coverImage);
+    expect(edited.swiperImages).toHaveLength(1);
+
+    // Delete
     await page.getByRole("button", { name: `Delete ${name}` }).click();
     await page.getByRole("button", { name: "Delete", exact: true }).click();
     await expect(page.getByText(name)).toHaveCount(0);

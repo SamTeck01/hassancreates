@@ -25,7 +25,8 @@ http.createServer((req, res) => {
         preset: field("upload_preset"), folder: field("folder"),
         hasFile: /name="file"; filename=/.test(text), bytes: body.length,
       });
-      return json(200, { secure_url: UPLOADED_URL });
+      const n = requests.filter((r) => r.service === "cloudinary").length;
+      return json(200, { secure_url: `${UPLOADED_URL}?e2e=${n}` }); // unique per upload
     }
     if (req.method === "POST" && req.url === "/emails") {
       requests.push({ service: "resend", auth: req.headers.authorization, payload: JSON.parse(body.toString("utf8")) });

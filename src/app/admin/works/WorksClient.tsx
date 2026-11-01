@@ -6,6 +6,29 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { Briefcase02Icon, Delete01Icon, Link01Icon } from "@hugeicons/core-free-icons";
 import { addProject, updateProject, deleteProject } from "@/app/actions/projects";
 import { pauseSmoothScroll, resumeSmoothScroll } from "@/lib/smoothScroll";
+import ProjectImages, { type ProjectImage } from "./ProjectImages";
+
+/** Existing project → one image list (gallery images + cover/background if they aren't in the gallery). */
+function projectToImages(p: { swiperImages?: string[]; imageCaptions?: string[]; coverImage?: string; bgImage?: string }): ProjectImage[] {
+  const list: ProjectImage[] = (p.swiperImages ?? []).map((url, i) => ({ url, caption: p.imageCaptions?.[i] ?? "", inGallery: true }));
+  const has = (u?: string) => !u || list.some((x) => x.url === u);
+  if (!has(p.bgImage)) list.unshift({ url: p.bgImage!, caption: "", inGallery: false });
+  if (!has(p.coverImage)) list.unshift({ url: p.coverImage!, caption: "", inGallery: false });
+  return list;
+}
+
+/** One image list → the fields the site uses. */
+function imagesToFields(images: ProjectImage[], cover: string, bg: string) {
+  const gallery = images.filter((i) => i.inGallery);
+  const c = cover || images[0]?.url || "";
+  const b = bg || c;
+  return {
+    coverImage: c, coverSrcSet: `${c} 1024w`,
+    bgImage: b, bgSrcSet: `${b} 2048w`,
+    swiperImages: gallery.length ? gallery.map((i) => i.url) : [c],
+    imageCaptions: gallery.length ? gallery.map((i) => i.caption || "") : [""],
+  };
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Project {
@@ -22,83 +45,6 @@ interface Project {
   swiperImages: string[];
   imageCaptions: string[];
   bgImage?: string;
-}
-
-// ── Image Upload Zone ─────────────────────────────────────────────────────────
-function ImageUploadZone({
-  label,
-  value,
-  onChange,
-  required,
-}: {
-  label: string;
-  value: string;
-  onChange: (url: string) => void;
-  required?: boolean;
-}) {
-  const [dragActive, setDragActive] = useState(false);
-  const [uploading, setUploading] = useState(false);
-
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(e.type === "dragenter" || e.type === "dragover");
-  };
-
-  const uploadFile = async (file: File) => {
-    setUploading(true);
-    const fd = new FormData();
-    fd.append("file", file);
-    try {
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      const data = await res.json();
-      if (data.success) onChange(data.url);
-      else alert(data.error || "Upload failed.");
-    } catch { alert("Upload error."); }
-    finally { setUploading(false); }
-  };
-
-  const labelCls = "text-xs font-semibold tracking-wide text-white/60 mb-1.5 block";
-
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className={labelCls}>{label}{required && " *"}</label>
-      <div
-        onDragEnter={handleDrag} onDragOver={handleDrag}
-        onDragLeave={() => setDragActive(false)}
-        onDrop={(e) => { e.preventDefault(); setDragActive(false); if (e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0]); }}
-        className={`relative h-24 border border-dashed rounded-xl flex flex-col items-center justify-center gap-1 p-3 transition-colors overflow-hidden ${
-          dragActive ? "border-[#6B21D9] bg-[#6B21D9]/5" : "border-white/10 bg-black/20 hover:border-white/20"
-        }`}
-      >
-        {value ? (
-          <>
-            <div className="absolute inset-0 opacity-20 bg-cover bg-center pointer-events-none" style={{ backgroundImage: `url('${value.replace(/'/g, "%27")}')` }} />
-            <div className="relative z-10 flex flex-col items-center gap-1 bg-black/70 px-3 py-1.5 rounded-lg border border-white/5 max-w-[90%]">
-              <span className="text-[10px] text-white font-mono truncate max-w-full">{value.split("/").pop()?.slice(0, 36)}</span>
-              <button type="button" onClick={() => onChange("")} className="text-[9px] text-red-400 hover:text-red-300 font-bold uppercase">Remove</button>
-            </div>
-          </>
-        ) : uploading ? (
-          <div className="flex flex-col items-center gap-1.5">
-            <span className="h-4 w-4 rounded-full border-2 border-white/10 border-t-[#6B21D9] animate-spin" />
-            <span className="text-[10px] text-white/40">Uploading…</span>
-          </div>
-        ) : (
-          <>
-            <span className="text-[11px] text-white/50 text-center">
-              Drop or{" "}
-              <label className="text-[#6B21D9] cursor-pointer hover:underline">
-                browse
-                <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && uploadFile(e.target.files[0])} className="hidden" />
-              </label>
-            </span>
-            <span className="text-[9px] text-white/25 font-mono">PNG, JPG, WEBP · max 10MB</span>
-          </>
-        )}
-      </div>
-    </div>
-  );
 }
 
 // ── Modal — SCROLL FIXED: overlay is overflow-hidden, inner box scrolls ──────
@@ -206,6 +152,8 @@ function ConfirmDelete({
 type ProjectDraft = Partial<{
   fName: string; fYear: string; fRole: string; fServices: string; fDesc: string;
   fTagline: string; fHref: string; fCover: string; fBg: string;
+  fImages: ProjectImage[];
+  /** legacy drafts */
   fSwiper: string[]; fCaptions: string[];
 }>;
 
@@ -267,20 +215,19 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
   const [fHref, setFHref] = useState("");
   const [fCover, setFCover] = useState("");
   const [fBg, setFBg] = useState("");
-  const [fSwiper, setFSwiper] = useState<string[]>([]);
-  const [fCaptions, setFCaptions] = useState<string[]>([]);
+  const [fImages, setFImages] = useState<ProjectImage[]>([]);
 
   const [draft, setDraft] = useStoredDraft<ProjectDraft>("hc-project-draft", (d) => !!(d.fName || d.fDesc));
 
   const reset = () => {
     setFName(""); setFYear(""); setFRole(""); setFServices("");
     setFDesc(""); setFTagline(""); setFHref(""); setFCover(""); setFBg("");
-    setFSwiper([]); setFCaptions([]);
+    setFImages([]);
     setError(""); setSuccess(false); setEditing(null);
   };
 
   const saveDraft = () => {
-    const d = { fName, fYear, fRole, fServices, fDesc, fTagline, fHref, fCover, fBg, fSwiper, fCaptions };
+    const d = { fName, fYear, fRole, fServices, fDesc, fTagline, fHref, fCover, fBg, fImages };
     setDraft(d);
     setModalOpen(false);
   };
@@ -290,7 +237,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
     setFName(draft.fName ?? ""); setFYear(draft.fYear ?? ""); setFRole(draft.fRole ?? "");
     setFServices(draft.fServices ?? ""); setFDesc(draft.fDesc ?? ""); setFTagline(draft.fTagline ?? "");
     setFHref(draft.fHref ?? ""); setFCover(draft.fCover ?? ""); setFBg(draft.fBg ?? "");
-    setFSwiper(draft.fSwiper ?? []); setFCaptions(draft.fCaptions ?? []);
+    setFImages(draft.fImages ?? projectToImages({ swiperImages: draft.fSwiper, imageCaptions: draft.fCaptions, coverImage: draft.fCover, bgImage: draft.fBg }));
     setEditing(null);
     setModalOpen(true);
   };
@@ -300,8 +247,9 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
   };
 
   const publishDraft = async () => {
-    if (!draft || !draft.fName || !draft.fDesc || !draft.fCover) {
-      alert("Draft needs at least a client name, description, and cover image."); return;
+    const dImages = draft?.fImages ?? projectToImages({ swiperImages: draft?.fSwiper, imageCaptions: draft?.fCaptions, coverImage: draft?.fCover, bgImage: draft?.fBg });
+    if (!draft || !draft.fName || !draft.fDesc || !dImages.length) {
+      alert("Draft needs at least a name, a short description and one image."); return;
     }
     setSubmitting(true);
     try {
@@ -310,11 +258,8 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
       const payload = {
         clientName: draft.fName, year: draft.fYear ?? "", role: draft.fRole ?? "",
         services: (draft.fServices || "").split(",").map((s: string) => s.trim()).filter(Boolean),
-        description: draft.fDesc, tagline: draft.fTagline || "", href: draft.fHref || "#",
-        coverImage: draft.fCover, coverSrcSet: `${draft.fCover} 1024w`,
-        bgImage: draft.fBg || draft.fCover, bgSrcSet: `${draft.fBg || draft.fCover} 2048w`,
-        swiperImages: draft.fSwiper?.length ? draft.fSwiper : [draft.fCover],
-        imageCaptions: draft.fCaptions?.length ? draft.fCaptions : ["Project showcase."],
+        description: draft.fDesc, tagline: draft.fTagline || draft.fDesc, href: draft.fHref || "#",
+        ...imagesToFields(dImages, draft.fCover ?? "", draft.fBg ?? ""),
       };
       const full = { id, number: num, ...payload };
       const r = await addProject(full);
@@ -332,25 +277,24 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
     setFName(p.clientName); setFYear(p.year); setFRole(p.role);
     setFServices(p.services.join(", ")); setFDesc(p.description || "");
     setFTagline(p.tagline || ""); setFHref(p.href);
-    setFCover(p.coverImage); setFBg(p.bgImage || "");
-    setFSwiper(p.swiperImages || []); setFCaptions(p.imageCaptions || []);
+    setFCover(p.coverImage); setFBg(p.bgImage || p.coverImage);
+    setFImages(projectToImages(p));
     setModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fName || !fYear || !fRole || !fDesc || !fCover || !fTagline || !fHref) {
-      setError("Please fill in all required (*) fields."); return;
-    }
+    const missing = [
+      !fName && "name", !fYear && "year", !fRole && "role",
+      !fDesc && "short description", !fImages.length && "at least one image",
+    ].filter(Boolean);
+    if (missing.length) { setError(`Please add: ${missing.join(", ")}.`); return; }
     setSubmitting(true); setError("");
     const payload = {
       clientName: fName, year: fYear, role: fRole,
       services: fServices.split(",").map((s) => s.trim()).filter(Boolean),
-      description: fDesc, tagline: fTagline, href: fHref,
-      coverImage: fCover, coverSrcSet: `${fCover} 1024w`,
-      bgImage: fBg || fCover, bgSrcSet: `${fBg || fCover} 2048w`,
-      swiperImages: fSwiper.length ? fSwiper : [fCover],
-      imageCaptions: fCaptions.length ? fCaptions : ["Project showcase."],
+      description: fDesc, tagline: fTagline.trim() || fDesc, href: fHref.trim() || "#",
+      ...imagesToFields(fImages, fCover, fBg),
     };
     try {
       if (editing) {
@@ -400,7 +344,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
             <p className="text-xs text-white/30 mt-0.5">{list.length} project{list.length !== 1 ? "s" : ""} live</p>
           </div>
           <button
-            onClick={() => { if (editing !== null) reset(); setModalOpen(true); }}
+            onClick={() => { if (editing !== null) reset(); if (!fYear) setFYear(String(new Date().getFullYear())); setModalOpen(true); }}
             className="flex items-center gap-2 bg-[#6B21D9] hover:bg-[#7c3aed] text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-colors shadow-lg shadow-[#6B21D9]/20"
           >
             + Upload Project
@@ -474,55 +418,29 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
       >
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-3">
-            <div><label htmlFor="project-client-name" className={labelCls}>Client Name *</label><input id="project-client-name" className={inputCls} value={fName} onChange={(e) => setFName(e.target.value)} placeholder="e.g. Archin" required /></div>
-            <div><label htmlFor="project-year" className={labelCls}>Year *</label><input id="project-year" className={inputCls} value={fYear} onChange={(e) => setFYear(e.target.value)} placeholder="2026" required /></div>
+            <div><label htmlFor="project-client-name" className={labelCls}>Project / client name *</label><input id="project-client-name" className={inputCls} value={fName} onChange={(e) => setFName(e.target.value)} placeholder="e.g. Stance" /></div>
+            <div><label htmlFor="project-year" className={labelCls}>Year *</label><input id="project-year" className={inputCls} value={fYear} onChange={(e) => setFYear(e.target.value)} placeholder="2026" inputMode="numeric" /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><label htmlFor="project-role" className={labelCls}>Role *</label><input id="project-role" className={inputCls} value={fRole} onChange={(e) => setFRole(e.target.value)} placeholder="Lead Designer" required /></div>
-            <div><label htmlFor="project-url-href" className={labelCls}>URL / Href *</label><input id="project-url-href" className={inputCls} value={fHref} onChange={(e) => setFHref(e.target.value)} placeholder="./works/archin" required /></div>
+            <div><label htmlFor="project-role" className={labelCls}>Your role *</label><input id="project-role" className={inputCls} value={fRole} onChange={(e) => setFRole(e.target.value)} placeholder="Brand Designer" /></div>
+            <div><label htmlFor="project-services" className={labelCls}>Services</label><input id="project-services" className={inputCls} value={fServices} onChange={(e) => setFServices(e.target.value)} placeholder="Branding, Logo Design" /></div>
           </div>
-          <div><label htmlFor="project-services-comma-separated" className={labelCls}>Services (comma-separated)</label><input id="project-services-comma-separated" className={inputCls} value={fServices} onChange={(e) => setFServices(e.target.value)} placeholder="Branding, UI/UX, Motion" /></div>
-          <div><label htmlFor="project-description" className={labelCls}>Description *</label><textarea id="project-description" className={`${inputCls} h-20 resize-none`} value={fDesc} onChange={(e) => setFDesc(e.target.value)} placeholder="Brief project summary…" required /></div>
-          <div><label htmlFor="project-tagline" className={labelCls}>Tagline *</label><textarea id="project-tagline" className={`${inputCls} h-20 resize-none`} value={fTagline} onChange={(e) => setFTagline(e.target.value)} placeholder="Expanded detail for the project view…" required /></div>
-          <div className="grid grid-cols-2 gap-3">
-            <ImageUploadZone label="Cover Image *" value={fCover} onChange={setFCover} required />
-            <ImageUploadZone label="Background Image" value={fBg} onChange={setFBg} />
-          </div>
+          <div><label htmlFor="project-description" className={labelCls}>Short description * <span className="font-normal text-white/35">— shows on the project card</span></label><textarea id="project-description" className={`${inputCls} h-20 resize-none`} value={fDesc} onChange={(e) => setFDesc(e.target.value)} placeholder="One or two sentences about the project…" /></div>
 
-          {/* Slideshow images */}
-          {fSwiper.length > 0 && (
-            <div className="border-t border-white/5 pt-4">
-              <p className="text-xs uppercase font-bold tracking-wider text-white/50 mb-3">Slideshow</p>
-              <div className="flex flex-col gap-2">
-                {fSwiper.map((url, i) => (
-                  <div key={i} className="flex gap-2 bg-black/20 border border-white/5 rounded-xl p-2.5 items-center">
-                    <div className="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 border border-white/5 bg-zinc-900">
-                      <img src={url} alt="" className="w-full h-full object-cover" />
-                    </div>
-                    <input
-                      type="text"
-                      value={fCaptions[i] || ""}
-                      onChange={(e) => setFCaptions((p) => p.map((c, idx) => idx === i ? e.target.value : c))}
-                      placeholder="Caption…"
-                      className="flex-grow bg-transparent border-b border-white/10 py-0.5 text-[11px] text-white focus:outline-none focus:border-[#6B21D9] transition-colors placeholder-white/20"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => { setFSwiper((p) => p.filter((_, j) => j !== i)); setFCaptions((p) => p.filter((_, j) => j !== i)); }}
-                      className="text-red-500 hover:text-red-400 p-1 flex-shrink-0"
-                    >
-                      <HugeiconsIcon icon={Delete01Icon} size={11} strokeWidth={2} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          <ImageUploadZone
-            label="Add Slideshow Image"
-            value=""
-            onChange={(url) => { if (url) { setFSwiper((p) => [...p, url]); setFCaptions((p) => [...p, ""]); } }}
+          <ProjectImages
+            images={fImages}
+            cover={fCover}
+            background={fBg}
+            onChange={({ images, cover, background }) => { setFImages(images); setFCover(cover); setFBg(background); }}
           />
+
+          <details className="group border-t border-white/5 pt-3">
+            <summary className="cursor-pointer text-xs font-semibold text-white/50 hover:text-white select-none">More options (optional)</summary>
+            <div className="flex flex-col gap-3 mt-3">
+              <div><label htmlFor="project-tagline" className={labelCls}>Gallery text <span className="font-normal text-white/35">— shown when visitors open the project. Uses the short description if empty.</span></label><textarea id="project-tagline" className={`${inputCls} h-20 resize-none`} value={fTagline} onChange={(e) => setFTagline(e.target.value)} placeholder="Tell the longer story…" /></div>
+              <div><label htmlFor="project-link" className={labelCls}>Project link <span className="font-normal text-white/35">— e.g. the live website</span></label><input id="project-link" className={inputCls} value={fHref} onChange={(e) => setFHref(e.target.value)} placeholder="https://…" /></div>
+            </div>
+          </details>
 
           {error && <p className="text-red-400 text-xs px-3 py-2 bg-red-950/20 border border-red-900/20 rounded-lg">{error}</p>}
           {success && <p className="text-emerald-400 text-xs px-3 py-2 bg-emerald-950/20 border border-emerald-900/20 rounded-lg">✓ {editing ? "Updated!" : "Uploaded!"}</p>}
