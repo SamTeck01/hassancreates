@@ -56,7 +56,7 @@ test.describe("works cards", () => {
     for (const p of projects) expect(cardText).toContain(nospace(p.clientName));
   });
 
-  test("exit motion: shrink + tilt on all screens, blur on desktop only (original design)", async ({ page }) => {
+  test("exit motion: shrink + tilt everywhere; blur on desktop, fade on mobile", async ({ page }) => {
     await page.goto("/", { waitUntil: "networkidle" });
     const first = page.locator(".cardWrapper").first();
     const top = await first.evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
@@ -65,13 +65,16 @@ test.describe("works cards", () => {
     await page.waitForTimeout(700);
     const st = await first.evaluate((el) => {
       const c = getComputedStyle(el);
-      return { filter: c.filter, transform: c.transform };
+      return { filter: c.filter, transform: c.transform, opacity: parseFloat(c.opacity) };
     });
     // matrix(a, b, ...) — b != 0 means rotated (tilt), a < 1 means shrunk
     const [a, b] = st.transform.replace(/^matrix\(|\)$/g, "").split(",").map(Number);
     expect(a).toBeLessThan(0.95);
     expect(b).toBeLessThan(0);
-    if (isMobile(page)) expect(st.filter).toBe("none");
+    if (isMobile(page)) {
+      expect(st.filter).toBe("none");
+      expect(st.opacity).toBeLessThan(0.6); // fades instead of blurring
+    }
     else expect(st.filter).toMatch(/blur\((?!0px)/);
   });
 

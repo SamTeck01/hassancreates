@@ -8,6 +8,7 @@ const PhotoViewer = dynamic(() => import("./PhotoViewer"), {
 });
 import { Project } from "@/types";
 import { PROJECTS_DATA } from "@/data/projects";
+import BlurredBg from "./BlurredBg";
 
 const NOISE_IMG =
   "https://framerusercontent.com/images/hiGYz6grmhAHSeZuNKHEuchTGTw.png";
@@ -36,6 +37,12 @@ function WorkCard({
   // blur capped at 8px (fixing-motion-performance rule 7: never large-surface blur >8px)
   const scale   = useTransform(scrollYProgress, [0, 1], [1, 0.80]);
   const opacity = useTransform(scrollYProgress, [0, 0.5, 1], [1, 0.4, 0]);
+  // Mobile fade. Function form on purpose: framer-motion hands keyframe-array
+  // opacity to a native scroll timeline, which freezes on sticky cards, so
+  // the fade above never actually runs. This one tracks the scroll.
+  const mobileOpacity = useTransform(scrollYProgress, (v) =>
+    v < 0.5 ? 1 - v * 1.2 : 0.4 - (v - 0.5) * 0.8
+  );
   const rotate  = useTransform(scrollYProgress, [0, 1], [0, -8]); // tilt left
   const blurPx  = useTransform(scrollYProgress, [0, 1], [0, 8]);  // ≤8px per perf skill
   const filter  = useMotionTemplate`blur(${blurPx}px)`;
@@ -50,7 +57,7 @@ function WorkCard({
         position: "sticky",
         zIndex: project.zIndex,
         scale:   isLast ? 1 : scale,
-        opacity: isLast ? 1 : opacity,
+        opacity: isLast ? 1 : isMobile ? mobileOpacity : opacity,
         rotate:  isLast ? 0 : rotate,
         filter:  isMobile || isLast ? "none" : filter,
         // 60vh of scroll space for the full exit animation on desktop; tighter 40vh on mobile
@@ -63,7 +70,11 @@ function WorkCard({
         {/* framer-148g6gm */}
         <div className="workCard relative rounded-[32px] overflow-hidden w-full min-h-[560px] flex flex-col min-[1440px]:min-h-[680px] max-[809px]:min-h-0">
 
-          {/* BG image — absolute fill */}
+          {/* BG image — on mobile, a cheap blur (small image scaled up) so the
+              shrink/tilt doesn't re-blur a full-size image every frame */}
+          {isMobile ? (
+            <BlurredBg src={project.bgImage} srcSet={project.bgSrcSet} />
+          ) : (
           <div className="absolute inset-0 rounded-[inherit] z-0 overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -77,6 +88,7 @@ function WorkCard({
               className="block w-full h-full rounded-[inherit] object-cover object-center blur-[28px] scale-[1.1]"
             />
           </div>
+          )}
 
           {/* Noise overlay — framer-z3ltis */}
           <div className="absolute inset-0 rounded-[inherit] opacity-[0.18] pointer-events-none z-[1]">
