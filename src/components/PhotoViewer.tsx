@@ -16,6 +16,7 @@ import BlurredBg from "./BlurredBg";
 import { Project } from "@/types";
 import { PROJECTS_DATA } from "@/data/projects";
 import { pauseSmoothScroll, resumeSmoothScroll } from "@/lib/smoothScroll";
+import { projectLink } from "@/lib/projectLink";
 
 interface PhotoViewerProps {
   projectId: string;
@@ -179,9 +180,9 @@ export default function PhotoViewer({ projectId, onClose }: PhotoViewerProps) {
         </div>
 
         <div className="flex items-center gap-4">
-          {data.href && (
+          {projectLink(data.href) && (
             <a
-              href={data.href}
+              href={projectLink(data.href)!}
               target="_blank"
               rel="noopener noreferrer"
               className="icon-button flex items-center justify-center gap-1.5 px-4 h-9 rounded-full bg-[#6B21D9] hover:bg-[#6B21D9]/90 text-white font-kyiv-sans text-[11px] font-medium uppercase tracking-[0.08em] transition-colors no-underline cursor-pointer select-none"

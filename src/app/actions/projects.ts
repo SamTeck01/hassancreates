@@ -4,28 +4,13 @@ import { isAdminRequest } from "@/lib/adminAuth";
 import { db } from "@/lib/db";
 import { projects } from "@/lib/db/schema";
 import { revalidatePath } from "next/cache";
+import { projectLink } from "@/lib/projectLink";
 import { asc, eq } from "drizzle-orm";
 
 // ── Input Sanitization ────────────────────────────────────────────────────────
 function sanitizeText(input: unknown, maxLength = 500): string {
   if (typeof input !== "string") return "";
   return input.trim().slice(0, maxLength);
-}
-
-function sanitizeUrl(input: unknown): string {
-  if (typeof input !== "string") return "";
-  const trimmed = input.trim();
-  // Only allow relative paths or http/https URLs — block javascript: and data: URIs
-  if (
-    trimmed === "#" ||
-    trimmed.startsWith("./") ||
-    trimmed.startsWith("/") ||
-    trimmed.startsWith("http://") ||
-    trimmed.startsWith("https://")
-  ) {
-    return trimmed.slice(0, 500);
-  }
-  return "";
 }
 
 function sanitizeImageUrl(input: unknown): string {
@@ -44,7 +29,8 @@ function validateProjectPayload(data: Record<string, unknown>): string | null {
   if (!sanitizeText(data.role, 200)) return "Role is required.";
   if (!sanitizeText(data.description, 2000)) return "Description is required.";
   // tagline and link are optional (the form fills sensible defaults)
-  if (data.href && data.href !== "#" && !sanitizeUrl(data.href)) return "Project link must start with http(s):// or /.";
+  const rawHref = sanitizeText(data.href, 500);
+  if (rawHref && rawHref !== "#" && !projectLink(rawHref)) return "Project link should be a website address, like hassancreates.design or https://….";
   if (!sanitizeImageUrl(data.coverImage)) return "Valid cover image URL is required.";
   return null;
 }
@@ -88,7 +74,7 @@ export async function addProject(data: {
       services: safeServices,
       description: sanitizeText(data.description, 2000),
       tagline: sanitizeText(data.tagline, 2000),
-      href: sanitizeUrl(data.href),
+      href: projectLink(sanitizeText(data.href, 500)) ?? "#",
       coverImage: safeCoverImage,
       coverSrcSet: sanitizeText(data.coverSrcSet, 1000) || `${safeCoverImage} 1024w`,
       swiperImages: Array.isArray(data.swiperImages)
@@ -146,7 +132,7 @@ export async function updateProject(id: string, data: {
       services: safeServices,
       description: sanitizeText(data.description, 2000),
       tagline: sanitizeText(data.tagline, 2000),
-      href: sanitizeUrl(data.href),
+      href: projectLink(sanitizeText(data.href, 500)) ?? "#",
       coverImage: safeCoverImage,
       coverSrcSet: sanitizeText(data.coverSrcSet, 1000) || `${safeCoverImage} 1024w`,
       swiperImages: Array.isArray(data.swiperImages)

@@ -159,3 +159,21 @@ test("hero cycles through every title, incl. 'a Brand Designer', without overflo
   }
   expect([...seen].sort()).toEqual(["Hassan!", "a Brand Designer", "a Motion Designer", "a Visual Designer"]);
 });
+
+test("no 'View Project' button leads to a missing page", async ({ page, request }) => {
+  const projects = await (await request.get("/api/projects")).json();
+  await page.goto("/", { waitUntil: "networkidle" });
+  for (let i = 0; i < projects.length; i++) {
+    const btn = page.locator(".cardWrapper").nth(i).getByRole("button", { name: "Click to View" });
+    await btn.scrollIntoViewIfNeeded();
+    await btn.click();
+    const link = page.getByRole("dialog").getByRole("link", { name: "View Project" });
+    if (await link.count()) {
+      const href = (await link.getAttribute("href"))!;
+      expect(href, projects[i].clientName).toMatch(/^https?:\/\//);
+      expect(href).not.toContain("/works/");
+    }
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toBeHidden();
+  }
+});

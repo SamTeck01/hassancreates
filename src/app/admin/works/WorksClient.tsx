@@ -7,6 +7,7 @@ import { Briefcase02Icon, Delete01Icon, Link01Icon } from "@hugeicons/core-free-
 import { addProject, updateProject, deleteProject, reorderProjects } from "@/app/actions/projects";
 import { pauseSmoothScroll, resumeSmoothScroll } from "@/lib/smoothScroll";
 import ProjectImages, { type ProjectImage } from "./ProjectImages";
+import { projectLink } from "@/lib/projectLink";
 
 /** Existing project → one image list (gallery images + cover/background if they aren't in the gallery). */
 function projectToImages(p: { swiperImages?: string[]; imageCaptions?: string[]; coverImage?: string; bgImage?: string }): ProjectImage[] {
@@ -425,9 +426,11 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
                   <button onClick={() => setToDelete(p)} aria-label={`Delete ${p.clientName}`} title="Delete" className="p-2 bg-red-950/15 hover:bg-red-950/30 border border-red-900/10 hover:border-red-900/25 text-red-500 hover:text-red-400 rounded-xl transition-colors">
                     <HugeiconsIcon icon={Delete01Icon} size={13} strokeWidth={2} />
                   </button>
-                  <a href={p.href} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/5 hover:bg-white/8 border border-white/5 text-white/30 hover:text-white rounded-xl transition-colors">
+{projectLink(p.href) && (
+                  <a href={projectLink(p.href)!} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/5 hover:bg-white/8 border border-white/5 text-white/30 hover:text-white rounded-xl transition-colors">
                     <HugeiconsIcon icon={Link01Icon} size={13} strokeWidth={2} />
                   </a>
+                  )}
                 </div>
               </article>
             ))}
