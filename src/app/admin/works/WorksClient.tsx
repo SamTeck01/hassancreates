@@ -277,7 +277,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
     setEditing(p);
     setFName(p.clientName); setFYear(p.year); setFRole(p.role);
     setFServices(p.services.join(", ")); setFDesc(p.description || "");
-    setFTagline(p.tagline || ""); setFHref(p.href);
+    setFTagline(p.tagline || ""); setFHref(projectLink(p.href) ?? "");
     setFCover(p.coverImage); setFBg(p.bgImage || p.coverImage);
     setFImages(projectToImages(p));
     setModalOpen(true);

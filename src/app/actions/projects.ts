@@ -29,8 +29,8 @@ function validateProjectPayload(data: Record<string, unknown>): string | null {
   if (!sanitizeText(data.role, 200)) return "Role is required.";
   if (!sanitizeText(data.description, 2000)) return "Description is required.";
   // tagline and link are optional (the form fills sensible defaults)
-  const rawHref = sanitizeText(data.href, 500);
-  if (rawHref && rawHref !== "#" && !projectLink(rawHref)) return "Project link should be a website address, like hassancreates.design or https://….";
+  // Project link is optional and never blocks a save: anything that isn't a
+  // real website (e.g. old template links like ./works/sass) is stored as "#".
   if (!sanitizeImageUrl(data.coverImage)) return "Valid cover image URL is required.";
   return null;
 }
