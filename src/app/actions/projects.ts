@@ -4,7 +4,7 @@ import { isAdminRequest } from "@/lib/adminAuth";
 import { db } from "@/lib/db";
 import { projects } from "@/lib/db/schema";
 import { revalidatePath } from "next/cache";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 
 // ── Input Sanitization ────────────────────────────────────────────────────────
 function sanitizeText(input: unknown, maxLength = 500): string {
@@ -174,6 +174,9 @@ export async function deleteProject(id: string) {
   if (!(await isAdminRequest())) return { success: false, error: "Unauthorized. Please log in again." };
   try {
     await db.delete(projects).where(eq(projects.id, sanitizeText(id, 100)));
+    // Close the gap so numbers stay 01, 02, 03… in the same order
+    const rest = await db.select({ id: projects.id }).from(projects).orderBy(asc(projects.number));
+    await renumber(rest.map((r) => r.id));
     
     revalidatePath("/admin");
     revalidatePath("/");
@@ -182,5 +185,36 @@ export async function deleteProject(id: string) {
   } catch (error) {
     console.error("Failed to delete project from database:", error);
     return { success: false, error: "Database error. Failed to delete project." };
+  }
+}
+
+// ── Reorder Projects ──────────────────────────────────────────────────────────
+/** Give projects the numbers 01, 02, 03… in the order of `ids`. */
+async function renumber(ids: string[]) {
+  for (let i = 0; i < ids.length; i++) {
+    await db.update(projects).set({ number: String(i + 1).padStart(2, "0") }).where(eq(projects.id, ids[i]));
+  }
+}
+
+/** Save a new order for the works. `ids` must list every project exactly once. */
+export async function reorderProjects(ids: string[]) {
+  if (!(await isAdminRequest())) return { success: false, error: "Unauthorized. Please log in again." };
+  try {
+    if (!Array.isArray(ids) || ids.some((x) => typeof x !== "string")) {
+      return { success: false, error: "Invalid order." };
+    }
+    const clean = ids.map((x) => sanitizeText(x, 100));
+    const existing = (await db.select({ id: projects.id }).from(projects)).map((r) => r.id);
+    const same = clean.length === existing.length && new Set(clean).size === clean.length && clean.every((x) => existing.includes(x));
+    if (!same) return { success: false, error: "The list changed — please refresh and try again." };
+
+    await renumber(clean);
+    revalidatePath("/admin");
+    revalidatePath("/admin/works");
+    revalidatePath("/");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to reorder projects:", error);
+    return { success: false, error: "Database error. Failed to save the new order." };
   }
 }

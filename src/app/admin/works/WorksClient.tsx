@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useStoredDraft } from "@/lib/useStoredDraft";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Briefcase02Icon, Delete01Icon, Link01Icon } from "@hugeicons/core-free-icons";
-import { addProject, updateProject, deleteProject } from "@/app/actions/projects";
+import { addProject, updateProject, deleteProject, reorderProjects } from "@/app/actions/projects";
 import { pauseSmoothScroll, resumeSmoothScroll } from "@/lib/smoothScroll";
 import ProjectImages, { type ProjectImage } from "./ProjectImages";
 
@@ -319,12 +319,34 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
     finally { setSubmitting(false); }
   };
 
+  // ── Reorder: move a project up/down; saves immediately ──
+  const [orderMsg, setOrderMsg] = useState("");
+  const [reordering, setReordering] = useState(false);
+  const move = async (index: number, dir: -1 | 1) => {
+    const j = index + dir;
+    if (j < 0 || j >= list.length || reordering) return;
+    const prev = list;
+    const next = [...list];
+    [next[index], next[j]] = [next[j], next[index]];
+    const renumbered = next.map((p, i) => ({ ...p, number: String(i + 1).padStart(2, "0") }));
+    setList(renumbered);
+    setReordering(true);
+    setOrderMsg("Saving order…");
+    const r = await reorderProjects(renumbered.map((p) => p.id)).catch(() => ({ success: false, error: "Network error." }));
+    setReordering(false);
+    if (r.success) setOrderMsg("✓ Order saved. The website shows the new order.");
+    else { setList(prev); setOrderMsg(`✗ ${r.error || "Could not save the order."}`); }
+  };
+
   const handleDelete = async () => {
     if (!toDelete) return;
     setDeleting(true);
     try {
       const r = await deleteProject(toDelete.id);
-      if (r.success) { setList((p) => p.filter((x) => x.id !== toDelete.id)); setToDelete(null); }
+      if (r.success) {
+        setList((p) => p.filter((x) => x.id !== toDelete.id).map((x, i) => ({ ...x, number: String(i + 1).padStart(2, "0") })));
+        setToDelete(null);
+      }
       else alert(r.error || "Delete failed.");
     } catch { alert("Unexpected error."); }
     finally { setDeleting(false); }
@@ -341,7 +363,8 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
         <header className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-xl font-black tracking-tight text-white font-kyiv">Works</h1>
-            <p className="text-xs text-white/30 mt-0.5">{list.length} project{list.length !== 1 ? "s" : ""} live</p>
+            <p className="text-xs text-white/30 mt-0.5">{list.length} project{list.length !== 1 ? "s" : ""} live · use ↑ ↓ on a card to change the order on the website</p>
+            {orderMsg && <p role="status" className={`text-xs mt-1 ${orderMsg.startsWith("✗") ? "text-red-400" : orderMsg.startsWith("✓") ? "text-emerald-400" : "text-white/50"}`}>{orderMsg}</p>}
           </div>
           <button
             onClick={() => { if (editing !== null) reset(); if (!fYear) setFYear(String(new Date().getFullYear())); setModalOpen(true); }}
@@ -367,7 +390,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {draft && <DraftProjectCard draft={draft} onEdit={openDraft} onPublish={publishDraft} onDiscard={discardDraft} busy={submitting} />}
-            {list.map((p) => (
+            {list.map((p, index) => (
               <article key={p.id} className="bg-[#161616] border border-white/6 rounded-2xl overflow-hidden flex flex-col hover:border-white/10 transition-colors group">
                 {/* Cover */}
                 <div className="relative aspect-[16/10] bg-zinc-900 overflow-hidden border-b border-white/5">
@@ -396,6 +419,8 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
                 </div>
                 {/* Actions */}
                 <div className="px-4 pb-4 flex gap-2">
+                  <button onClick={() => move(index, -1)} disabled={index === 0 || reordering} aria-label={`Move ${p.clientName} up`} title="Move up (earlier on the website)" className="px-2.5 py-2 bg-white/5 hover:bg-white/10 border border-white/5 text-[12px] font-bold text-white/70 hover:text-white rounded-xl transition-colors disabled:opacity-25 disabled:cursor-not-allowed">↑</button>
+                  <button onClick={() => move(index, 1)} disabled={index === list.length - 1 || reordering} aria-label={`Move ${p.clientName} down`} title="Move down (later on the website)" className="px-2.5 py-2 bg-white/5 hover:bg-white/10 border border-white/5 text-[12px] font-bold text-white/70 hover:text-white rounded-xl transition-colors disabled:opacity-25 disabled:cursor-not-allowed">↓</button>
                   <button onClick={() => openEdit(p)} className="flex-grow py-2 bg-white/5 hover:bg-white/8 border border-white/5 text-[11px] font-semibold text-white/70 hover:text-white rounded-xl transition-colors">Edit</button>
                   <button onClick={() => setToDelete(p)} aria-label={`Delete ${p.clientName}`} title="Delete" className="p-2 bg-red-950/15 hover:bg-red-950/30 border border-red-900/10 hover:border-red-900/25 text-red-500 hover:text-red-400 rounded-xl transition-colors">
                     <HugeiconsIcon icon={Delete01Icon} size={13} strokeWidth={2} />

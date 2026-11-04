@@ -79,3 +79,29 @@ test("inbox 'Send test email' reports the result", async ({ page }) => {
   await expect(page.getByRole("status")).toHaveText(/Test email sent|Email not sent/, { timeout: 20000 });
   console.log("email check:", await page.getByRole("status").textContent());
 });
+
+test("reorder works: ↓ then ↑ changes the homepage order and restores it", async ({ page, request }) => {
+  const before = (await (await request.get("/api/projects")).json()) as { id: string; clientName: string }[];
+  test.skip(before.length < 2, "needs 2+ projects");
+  const [a, b] = before;
+  await login(page);
+  await page.goto("/admin/works", { waitUntil: "networkidle" });
+
+  await page.getByRole("button", { name: `Move ${a.clientName} down` }).click();
+  await expect(page.getByRole("status")).toHaveText(/Order saved/, { timeout: 15000 });
+  const mid = (await (await request.get("/api/projects")).json()) as { id: string; number: string }[];
+  expect(mid.slice(0, 2).map((p) => p.id)).toEqual([b.id, a.id]);
+  expect(mid.map((p) => p.number)).toEqual(mid.map((_, i) => String(i + 1).padStart(2, "0")));
+  // Homepage follows the new order
+  await expect.poll(async () => {
+    await page.goto("/", { waitUntil: "networkidle" });
+    return page.locator(".cardWrapper").first().getByRole("button", { name: "Click to View" }).count();
+  }).toBeGreaterThan(0);
+
+  // Put it back exactly as it was
+  await page.goto("/admin/works", { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: `Move ${a.clientName} up` }).click();
+  await expect(page.getByRole("status")).toHaveText(/Order saved/, { timeout: 15000 });
+  const after = (await (await request.get("/api/projects")).json()) as { id: string }[];
+  expect(after.map((p) => p.id)).toEqual(before.map((p) => p.id));
+});
