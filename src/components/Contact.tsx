@@ -19,7 +19,7 @@ import {
 const FLOWER_SRC =
   "https://framerusercontent.com/images/bPFUMYGmKDGU6pubiY2MFnjtBAk.svg";
 // Hassan's email split at @ so we can colour the @ sign orange
-const EMAIL_USER   = "hassancreatess";
+const EMAIL_USER   = "hokesanjn";
 const EMAIL_DOMAIN = "gmail.com";
 const EMAIL_FULL   = `${EMAIL_USER}@${EMAIL_DOMAIN}`;
 
@@ -396,8 +396,8 @@ export default function Contact() {
                       <span className="font-kyiv" style={{ fontSize: 40, color: "rgba(255,255,255,0.6)", lineHeight: 1 }}>✗</span>
                       <p className="font-kyiv-sans m-0" style={{ color: "rgba(255,255,255,0.8)", fontSize: 16 }}>
                         Something went wrong. Email me directly at{" "}
-                        <a href="mailto:hassancreatess@gmail.com" className="underline text-white">
-                          hassancreatess@gmail.com
+                        <a href="mailto:hokesanjn@gmail.com" className="underline text-white">
+                          hokesanjn@gmail.com
                         </a>
                       </p>
                       <button

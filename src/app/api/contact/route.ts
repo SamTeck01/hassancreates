@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       const resend = new Resend(apiKey)
       const { error } = await resend.emails.send({
         from: process.env.CONTACT_FROM_EMAIL || "HassanCreates Contact <onboarding@resend.dev>",
-        to: process.env.CONTACT_TO_EMAIL || "hassancreatess@gmail.com",
+        to: process.env.CONTACT_TO_EMAIL || "hokesanjn@gmail.com",
         replyTo: email,
         subject: subjectLine,
         html: renderContactEmail({ name, email, description }),

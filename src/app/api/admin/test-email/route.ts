@@ -14,7 +14,7 @@ export async function POST() {
 
   const apiKey = process.env.RESEND_API_KEY
   const from = process.env.CONTACT_FROM_EMAIL || "HassanCreates Contact <onboarding@resend.dev>"
-  const to = process.env.CONTACT_TO_EMAIL || "hassancreatess@gmail.com"
+  const to = process.env.CONTACT_TO_EMAIL || "hokesanjn@gmail.com"
   const config = {
     keyPresent: !!apiKey,
     keyPrefix: apiKey ? apiKey.slice(0, 3) : null,
