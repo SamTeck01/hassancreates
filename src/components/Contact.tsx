@@ -170,7 +170,7 @@ const SOCIAL_LINKS = [
   { href: "https://instagram.com/hassancreates_", icon: InstagramIcon, label: "Instagram" },
   { href: "https://x.com/hassancreates", icon: NewTwitterIcon, label: "X (Twitter)" },
   { href: "https://linkedin.com/in/hassancreates", icon: Linkedin01Icon, label: "LinkedIn" },
-  { href: "https://behance.net/hassancreates", icon: Behance01Icon, label: "Behance" },
+  { href: "https://behance.net/hassanokesanjo1", icon: Behance01Icon, label: "Behance" },
   { href: "https://wa.me/2347065208037", icon: WhatsappIcon, label: "WhatsApp" },
 ];
 
