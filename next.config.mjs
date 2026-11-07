@@ -67,7 +67,7 @@ const nextConfig = {
               // Fonts: self + Google Fonts
               "font-src 'self' https://fonts.gstatic.com data:",
               // Images: self + Cloudinary + Framer + local data URIs
-              "img-src 'self' data: blob: https://res.cloudinary.com https://framerusercontent.com",
+              "img-src 'self' data: blob: https://res.cloudinary.com https://framerusercontent.com https://mir-s3-cdn-cf.behance.net",
               // Media: allow data: URIs (e.g. audio playback via base64)
               "media-src 'self' data: blob:",
               // API/Fetch connections: self + Cloudinary + Vercel Analytics + Vercel Live

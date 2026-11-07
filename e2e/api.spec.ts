@@ -53,3 +53,8 @@ test("public data is never rate-limited (shared mobile IPs)", async ({ request }
 test("test-email endpoint requires login", async ({ request }) => {
   expect((await request.post("/api/admin/test-email")).status()).toBe(401);
 });
+
+test("import page requires login", async ({ request }) => {
+  const r = await request.get("/admin/works/import", { maxRedirects: 0 });
+  expect([302, 303, 307, 308]).toContain(r.status());
+});

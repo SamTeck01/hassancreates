@@ -204,3 +204,88 @@ export async function reorderProjects(ids: string[]) {
     return { success: false, error: "Database error. Failed to save the new order." };
   }
 }
+
+// ── Import from Behance ───────────────────────────────────────────────────────
+/** Copy a remote image into Cloudinary (Cloudinary fetches it). */
+async function copyToCloudinary(url: string): Promise<string | null> {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const preset = process.env.CLOUDINARY_UPLOAD_PRESET;
+  if (!cloudName || !preset) return null;
+  const fd = new FormData();
+  fd.append("file", url);
+  fd.append("upload_preset", preset);
+  fd.append("folder", "hassancreates");
+  try {
+    const base = process.env.CLOUDINARY_API_BASE ?? "https://api.cloudinary.com";
+    const res = await fetch(`${base}/v1_1/${cloudName}/image/upload`, { method: "POST", body: fd, signal: AbortSignal.timeout(30000) });
+    if (!res.ok) { console.error("Cloudinary remote upload failed:", res.status, await res.text().catch(() => "")); return null; }
+    const data = await res.json();
+    return typeof data.secure_url === "string" ? data.secure_url : null;
+  } catch (e) {
+    console.error("Cloudinary remote upload error:", e);
+    return null;
+  }
+}
+
+/**
+ * Create one project from a Behance project read by the bookmarklet.
+ * Only Behance image-CDN URLs are accepted; each is copied into Cloudinary.
+ */
+export async function importBehanceProject(input: {
+  url: string; title: string; description: string; year: string; role: string; images: string[];
+}) {
+  if (!(await isAdminRequest())) return { success: false, error: "Unauthorized. Please log in again." };
+  const { BEHANCE_IMAGE_PREFIX } = await import("@/lib/behanceBookmarklet");
+
+  const title = sanitizeText(input?.title, 200);
+  if (!title) return { success: false, error: "Missing project name." };
+  const images = (Array.isArray(input?.images) ? input.images : [])
+    .filter((u): u is string => typeof u === "string" && u.startsWith(BEHANCE_IMAGE_PREFIX))
+    .slice(0, 20);
+  if (!images.length) return { success: false, error: "No Behance images found for this project." };
+
+  try {
+    const existing = await db.select({ clientName: projects.clientName }).from(projects);
+    if (existing.some((p) => p.clientName.trim().toLowerCase() === title.toLowerCase())) {
+      return { success: false, skipped: true, error: "Already on the site — skipped." };
+    }
+
+    const copied: string[] = [];
+    for (const url of images) {
+      const c = await copyToCloudinary(url);
+      if (c) copied.push(c);
+    }
+    if (!copied.length) return { success: false, error: "Couldn't copy the images to Cloudinary." };
+
+    const description = sanitizeText(input.description, 2000) || title;
+    const year = sanitizeText(input.year, 10) || String(new Date().getFullYear());
+    const id = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) + "-" + Date.now().toString(36).slice(-4);
+    const number = String(existing.length + 1).padStart(2, "0");
+    const link = typeof input.url === "string" && /^https:\/\/(www\.)?behance\.net\/gallery\/\d+/.test(input.url) ? input.url.slice(0, 500) : "#";
+
+    await db.insert(projects).values({
+      id, number,
+      clientName: title,
+      year,
+      role: sanitizeText(input.role, 200) || "Designer",
+      services: [],
+      description,
+      tagline: description,
+      href: link,
+      coverImage: copied[0],
+      coverSrcSet: `${copied[0]} 1024w`,
+      swiperImages: copied,
+      imageCaptions: copied.map(() => ""),
+      bgImage: copied[0],
+      bgSrcSet: `${copied[0]} 2048w`,
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/admin/works");
+    revalidatePath("/");
+    return { success: true, id, images: copied.length, failedImages: images.length - copied.length };
+  } catch (error) {
+    console.error("Behance import failed:", error);
+    return { success: false, error: "Database error. Failed to import project." };
+  }
+}

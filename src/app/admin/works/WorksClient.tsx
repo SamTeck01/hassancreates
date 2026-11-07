@@ -367,12 +367,17 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
             <p className="text-xs text-white/30 mt-0.5">{list.length} project{list.length !== 1 ? "s" : ""} live · use ↑ ↓ on a card to change the order on the website</p>
             {orderMsg && <p role="status" className={`text-xs mt-1 ${orderMsg.startsWith("✗") ? "text-red-400" : orderMsg.startsWith("✓") ? "text-emerald-400" : "text-white/50"}`}>{orderMsg}</p>}
           </div>
+          <div className="flex flex-wrap gap-2">
           <button
             onClick={() => { if (editing !== null) reset(); if (!fYear) setFYear(String(new Date().getFullYear())); setModalOpen(true); }}
             className="flex items-center gap-2 bg-[#6B21D9] hover:bg-[#7c3aed] text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-colors shadow-lg shadow-[#6B21D9]/20"
           >
             + Upload Project
           </button>
+          <a href="/admin/works/import" className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-colors">
+            Import from Behance
+          </a>
+          </div>
         </header>
 
         {/* Grid */}

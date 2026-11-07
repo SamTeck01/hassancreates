@@ -167,6 +167,8 @@ test("no 'View Project' button leads to a missing page", async ({ page, request 
     const btn = page.locator(".cardWrapper").nth(i).getByRole("button", { name: "Click to View" });
     await btn.focus(); // keyboard: cards are always animating, so mouse clicks wait for "stable"
     await page.keyboard.press("Enter");
+    await expect(page.getByRole("dialog").getByRole("heading", { level: 1 })).toHaveText(projects[i].clientName);
+    await page.waitForTimeout(300); // let the open animation + key listener settle
     const link = page.getByRole("dialog").getByRole("link", { name: "View Project" });
     if (await link.count()) {
       const href = (await link.getAttribute("href"))!;
