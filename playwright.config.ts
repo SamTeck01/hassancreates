@@ -49,6 +49,7 @@ export default defineConfig({
         CLOUDINARY_CLOUD_NAME: "e2e-cloud",
         CLOUDINARY_UPLOAD_PRESET: "e2e-preset",
         CLOUDINARY_API_BASE: MOCK,
+        BEHANCE_BASE_URL: MOCK,
         RESEND_API_KEY: "re_e2e_local_only",
         RESEND_BASE_URL: MOCK,
         CONTACT_TO_EMAIL: "hassan-e2e@example.com",

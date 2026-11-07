@@ -1,4 +1,5 @@
 import { PROJECTS_DATA } from "@/data/projects";
+import { ensureSchema } from "@/lib/db/ensureSchema";
 import type { Project } from "@/types";
 
 /**
@@ -10,7 +11,7 @@ type ProjectRow = typeof import("@/lib/db/schema").projects.$inferSelect;
 
 /** DB rows use `null` for an empty bg srcset; the app type uses `undefined`. */
 export function rowToProject(r: ProjectRow): Project {
-  return { ...r, bgSrcSet: r.bgSrcSet ?? undefined };
+  return { ...r, bgSrcSet: r.bgSrcSet ?? undefined, published: r.published !== false };
 }
 
 export async function getProjects(): Promise<Project[]> {
@@ -18,6 +19,7 @@ export async function getProjects(): Promise<Project[]> {
     const { db } = await import("@/lib/db");
     const { projects } = await import("@/lib/db/schema");
 
+    await ensureSchema();
     let rows = await db.select().from(projects);
 
     if (!rows || rows.length === 0) {
@@ -44,7 +46,8 @@ export async function getProjects(): Promise<Project[]> {
       rows = await db.select().from(projects);
     }
 
-    return rows.map(rowToProject).sort((a, b) => a.number.localeCompare(b.number));
+    // Drafts stay in the admin only
+    return rows.filter((r) => r.published !== false).map(rowToProject).sort((a, b) => a.number.localeCompare(b.number));
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     if (msg.includes("TimeoutError") || msg.includes("fetch failed")) {

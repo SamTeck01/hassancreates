@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useStoredDraft } from "@/lib/useStoredDraft";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Briefcase02Icon, Delete01Icon, Link01Icon } from "@hugeicons/core-free-icons";
-import { addProject, updateProject, deleteProject, reorderProjects } from "@/app/actions/projects";
+import { addProject, updateProject, deleteProject, reorderProjects, setProjectPublished, readBehanceProject, copyBehanceImages } from "@/app/actions/projects";
 import { pauseSmoothScroll, resumeSmoothScroll } from "@/lib/smoothScroll";
 import ProjectImages, { type ProjectImage } from "./ProjectImages";
 import { projectLink } from "@/lib/projectLink";
@@ -46,6 +46,7 @@ interface Project {
   swiperImages: string[];
   imageCaptions: string[];
   bgImage?: string;
+  published?: boolean;
 }
 
 // ── Modal — SCROLL FIXED: overlay is overflow-hidden, inner box scrolls ──────
@@ -217,20 +218,74 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
   const [fCover, setFCover] = useState("");
   const [fBg, setFBg] = useState("");
   const [fImages, setFImages] = useState<ProjectImage[]>([]);
+  const [fPublished, setFPublished] = useState(true);
+  const [notice, setNotice] = useState("");
+
+  // ── Import from Behance ──
+  const [importOpen, setImportOpen] = useState(false);
+  const [importUrl, setImportUrl] = useState("");
+  const [importMsg, setImportMsg] = useState("");
+  const [importing, setImporting] = useState(false);
+  const runImport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setImporting(true);
+    setImportMsg("Reading the project from Behance…");
+    try {
+      const r = await readBehanceProject(importUrl);
+      if (!r.ok) { setImportMsg(`✗ ${r.error}`); return; }
+      const d = r.data;
+      const toCopy = [...(d.cover ? [d.cover] : []), ...d.images];
+      setImportMsg(`Copying ${toCopy.length} image(s) to your Cloudinary… (this can take a minute)`);
+      const c = await copyBehanceImages(toCopy);
+      if (!c.ok) { setImportMsg(`✗ ${c.error}`); return; }
+      const coverUrl = d.cover ? c.urls[0] : null;
+      const gallery = (d.cover ? c.urls.slice(1) : c.urls).filter((u): u is string => !!u);
+      const imgs: ProjectImage[] = [
+        ...(coverUrl ? [{ url: coverUrl, caption: "", inGallery: false }] : []),
+        ...gallery.map((url) => ({ url, caption: "", inGallery: true })),
+      ];
+      if (!imgs.length) { setImportMsg("✗ Couldn't copy any images to Cloudinary."); return; }
+      const failed = c.urls.filter((u) => !u).length;
+      reset();
+      setFName(d.title);
+      setFYear(d.year || String(new Date().getFullYear()));
+      setFServices(d.tags.join(", "));
+      setFDesc(d.description);
+      setFTagline(d.description);
+      setFHref(d.url);
+      setFImages(imgs);
+      setFCover(imgs[0].url);
+      setFBg(imgs[0].url);
+      setFPublished(false);
+      setImportOpen(false);
+      setImportUrl("");
+      setImportMsg("");
+      setModalOpen(true);
+      setNotice(`Imported from Behance${failed ? ` (${failed} image(s) couldn't be copied)` : ""}. Add your role, check everything, then Publish or Save as draft.`);
+    } catch {
+      setImportMsg("✗ Something went wrong. Try again.");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const togglePublished = async (p: Project) => {
+    const next = p.published === false;
+    setList((l) => l.map((x) => (x.id === p.id ? { ...x, published: next } : x)));
+    const r = await setProjectPublished(p.id, next).catch(() => ({ success: false, error: "Network error." }));
+    if (!r.success) {
+      setList((l) => l.map((x) => (x.id === p.id ? { ...x, published: !next } : x)));
+      alert(r.error || "Couldn't change it.");
+    }
+  };
 
   const [draft, setDraft] = useStoredDraft<ProjectDraft>("hc-project-draft", (d) => !!(d.fName || d.fDesc));
 
   const reset = () => {
     setFName(""); setFYear(""); setFRole(""); setFServices("");
     setFDesc(""); setFTagline(""); setFHref(""); setFCover(""); setFBg("");
-    setFImages([]);
+    setFImages([]); setFPublished(true); setNotice("");
     setError(""); setSuccess(false); setEditing(null);
-  };
-
-  const saveDraft = () => {
-    const d = { fName, fYear, fRole, fServices, fDesc, fTagline, fHref, fCover, fBg, fImages };
-    setDraft(d);
-    setModalOpen(false);
   };
 
   const openDraft = () => {
@@ -280,6 +335,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
     setFTagline(p.tagline || ""); setFHref(projectLink(p.href) ?? "");
     setFCover(p.coverImage); setFBg(p.bgImage || p.coverImage);
     setFImages(projectToImages(p));
+    setFPublished(p.published !== false);
     setModalOpen(true);
   };
 
@@ -290,8 +346,11 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
       !fDesc && "short description", !fImages.length && "at least one image",
     ].filter(Boolean);
     if (missing.length) { setError(`Please add: ${missing.join(", ")}.`); return; }
+    const submitter = (e.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null;
+    const published = submitter?.dataset.publish ? submitter.dataset.publish === "true" : fPublished;
     setSubmitting(true); setError("");
     const payload = {
+      published,
       clientName: fName, year: fYear, role: fRole,
       services: fServices.split(",").map((s) => s.trim()).filter(Boolean),
       description: fDesc, tagline: fTagline.trim() || fDesc, href: fHref.trim() || "#",
@@ -374,9 +433,9 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
           >
             + Upload Project
           </button>
-          <a href="/admin/works/import" className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-colors">
+          <button type="button" onClick={() => { setImportMsg(""); setImportOpen(true); }} className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-colors">
             Import from Behance
-          </a>
+          </button>
           </div>
         </header>
 
@@ -408,6 +467,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
                     </div>
                   )}
                   <span className="absolute top-2.5 left-2.5 bg-black/80 text-white font-mono text-[10px] font-bold h-5 px-2 rounded-full flex items-center border border-white/5">{p.number}</span>
+                  {p.published === false && <span className="absolute top-2.5 right-2.5 bg-amber-500 text-black text-[10px] font-bold h-5 px-2 rounded-full flex items-center">DRAFT · not on website</span>}
                 </div>
                 {/* Meta */}
                 <div className="p-4 flex-grow flex flex-col gap-1.5">
@@ -427,6 +487,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
                 <div className="px-4 pb-4 flex gap-2">
                   <button onClick={() => move(index, -1)} disabled={index === 0 || reordering} aria-label={`Move ${p.clientName} up`} title="Move up (earlier on the website)" className="px-2.5 py-2 bg-white/5 hover:bg-white/10 border border-white/5 text-[12px] font-bold text-white/70 hover:text-white rounded-xl transition-colors disabled:opacity-25 disabled:cursor-not-allowed">↑</button>
                   <button onClick={() => move(index, 1)} disabled={index === list.length - 1 || reordering} aria-label={`Move ${p.clientName} down`} title="Move down (later on the website)" className="px-2.5 py-2 bg-white/5 hover:bg-white/10 border border-white/5 text-[12px] font-bold text-white/70 hover:text-white rounded-xl transition-colors disabled:opacity-25 disabled:cursor-not-allowed">↓</button>
+                  <button onClick={() => togglePublished(p)} className={`px-3 py-2 text-[11px] font-semibold rounded-xl border transition-colors ${p.published === false ? "bg-[#6B21D9] border-[#6B21D9] text-white" : "bg-white/5 border-white/5 text-white/60 hover:text-white"}`}>{p.published === false ? "Publish" : "Hide"}</button>
                   <button onClick={() => openEdit(p)} className="flex-grow py-2 bg-white/5 hover:bg-white/8 border border-white/5 text-[11px] font-semibold text-white/70 hover:text-white rounded-xl transition-colors">Edit</button>
                   <button onClick={() => setToDelete(p)} aria-label={`Delete ${p.clientName}`} title="Delete" className="p-2 bg-red-950/15 hover:bg-red-950/30 border border-red-900/10 hover:border-red-900/25 text-red-500 hover:text-red-400 rounded-xl transition-colors">
                     <HugeiconsIcon icon={Delete01Icon} size={13} strokeWidth={2} />
@@ -475,27 +536,37 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
             </div>
           </details>
 
+          {notice && <p className="text-[#c4b5fd] text-xs px-3 py-2 bg-[#6B21D9]/10 border border-[#6B21D9]/30 rounded-lg">{notice}</p>}
           {error && <p className="text-red-400 text-xs px-3 py-2 bg-red-950/20 border border-red-900/20 rounded-lg">{error}</p>}
           {success && <p className="text-emerald-400 text-xs px-3 py-2 bg-emerald-950/20 border border-emerald-900/20 rounded-lg">✓ {editing ? "Updated!" : "Uploaded!"}</p>}
+          <p className="text-[11px] text-white/40">{fPublished ? "Currently shown on the website." : "Currently a draft — only you can see it here."}</p>
 
           <div className="flex items-center justify-between pt-2 border-t border-white/5">
             <button type="button" onClick={() => setModalOpen(false)} className="px-4 py-2 text-xs font-semibold text-white/45 hover:text-white transition-colors" disabled={submitting}>Cancel</button>
             <div className="flex gap-3">
-              {!editing && (
-                <button
-                  type="button"
-                  onClick={saveDraft}
-                  disabled={submitting}
-                  className="px-4 py-2 text-xs font-semibold text-white/60 hover:text-white bg-white/5 hover:bg-white/8 border border-white/5 rounded-xl transition-colors flex items-center gap-1.5"
-                >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                  Save Draft
-                </button>
-              )}
-              <button type="submit" disabled={submitting} className="bg-[#6B21D9] hover:bg-[#7c3aed] text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-colors disabled:opacity-50">
-                {submitting ? "Saving…" : editing ? "Save Changes" : "Upload Project"}
+              <button type="submit" data-publish="false" disabled={submitting} className="px-4 py-2 text-xs font-semibold text-white/70 hover:text-white bg-white/5 hover:bg-white/8 border border-white/10 rounded-xl transition-colors disabled:opacity-50">
+                {submitting ? "Saving…" : "Save as draft"}
+              </button>
+              <button type="submit" data-publish="true" disabled={submitting} className="bg-[#6B21D9] hover:bg-[#7c3aed] text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-colors disabled:opacity-50">
+                {submitting ? "Saving…" : editing && fPublished ? "Save Changes" : "Publish"}
               </button>
             </div>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ── Import from Behance ── */}
+      <Modal open={importOpen} onClose={() => !importing && setImportOpen(false)} title="Import from Behance">
+        <form onSubmit={runImport} className="flex flex-col gap-4">
+          <div>
+            <label htmlFor="behance-url" className={labelCls}>Behance project link</label>
+            <input id="behance-url" className={inputCls} value={importUrl} onChange={(e) => setImportUrl(e.target.value)} placeholder="https://www.behance.net/gallery/123456/Project-Name" inputMode="url" autoComplete="off" disabled={importing} />
+            <p className="text-[11px] text-white/40 mt-1.5">Open the project on Behance, copy its link, paste it here. You&apos;ll review everything before it goes on the website.</p>
+          </div>
+          {importMsg && <p role="status" className={`text-xs px-3 py-2 rounded-lg border ${importMsg.startsWith("✗") ? "text-red-400 bg-red-950/20 border-red-900/20" : "text-white/70 bg-white/5 border-white/10"}`}>{importMsg}</p>}
+          <div className="flex justify-end gap-3">
+            <button type="button" onClick={() => setImportOpen(false)} disabled={importing} className="px-4 py-2 text-xs font-semibold text-white/45 hover:text-white">Cancel</button>
+            <button type="submit" disabled={importing || !importUrl.trim()} className="bg-[#6B21D9] hover:bg-[#7c3aed] text-white font-bold text-xs px-5 py-2.5 rounded-xl disabled:opacity-40">{importing ? "Importing…" : "Import project"}</button>
           </div>
         </form>
       </Modal>

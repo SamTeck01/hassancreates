@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { projects } from "@/lib/db/schema";
 import { revalidatePath } from "next/cache";
 import { projectLink } from "@/lib/projectLink";
+import { ensureSchema } from "@/lib/db/ensureSchema";
 import { asc, eq } from "drizzle-orm";
 
 // ── Input Sanitization ────────────────────────────────────────────────────────
@@ -52,8 +53,10 @@ export async function addProject(data: {
   imageCaptions?: string[];
   bgImage?: string;
   bgSrcSet?: string;
+  published?: boolean;
 }) {
   if (!(await isAdminRequest())) return { success: false, error: "Unauthorized. Please log in again." };
+  await ensureSchema().catch(() => {});
   const validationError = validateProjectPayload(data as Record<string, unknown>);
   if (validationError) return { success: false, error: validationError };
 
@@ -85,6 +88,7 @@ export async function addProject(data: {
         : ["Project showcase image."],
       bgImage: safeBgImage,
       bgSrcSet: sanitizeText(data.bgSrcSet, 1000) || `${safeBgImage} 2048w`,
+      ...(typeof data.published === "boolean" ? { published: data.published } : {}),
     });
 
     revalidatePath("/admin");
@@ -112,8 +116,10 @@ export async function updateProject(id: string, data: {
   imageCaptions?: string[];
   bgImage?: string;
   bgSrcSet?: string;
+  published?: boolean;
 }) {
   if (!(await isAdminRequest())) return { success: false, error: "Unauthorized. Please log in again." };
+  await ensureSchema().catch(() => {});
   const validationError = validateProjectPayload(data as Record<string, unknown>);
   if (validationError) return { success: false, error: validationError };
 
@@ -143,6 +149,7 @@ export async function updateProject(id: string, data: {
         : ["Project showcase image."],
       bgImage: safeBgImage,
       bgSrcSet: sanitizeText(data.bgSrcSet, 1000) || `${safeBgImage} 2048w`,
+      ...(typeof data.published === "boolean" ? { published: data.published } : {}),
     }).where(eq(projects.id, sanitizeText(id, 100)));
 
     revalidatePath("/admin");
@@ -158,6 +165,7 @@ export async function updateProject(id: string, data: {
 // ── Delete Project ────────────────────────────────────────────────────────────
 export async function deleteProject(id: string) {
   if (!(await isAdminRequest())) return { success: false, error: "Unauthorized. Please log in again." };
+  await ensureSchema().catch(() => {});
   try {
     await db.delete(projects).where(eq(projects.id, sanitizeText(id, 100)));
     // Close the gap so numbers stay 01, 02, 03… in the same order
@@ -185,6 +193,7 @@ async function renumber(ids: string[]) {
 /** Save a new order for the works. `ids` must list every project exactly once. */
 export async function reorderProjects(ids: string[]) {
   if (!(await isAdminRequest())) return { success: false, error: "Unauthorized. Please log in again." };
+  await ensureSchema().catch(() => {});
   try {
     if (!Array.isArray(ids) || ids.some((x) => typeof x !== "string")) {
       return { success: false, error: "Invalid order." };
@@ -227,65 +236,36 @@ async function copyToCloudinary(url: string): Promise<string | null> {
   }
 }
 
-/**
- * Create one project from a Behance project read by the bookmarklet.
- * Only Behance image-CDN URLs are accepted; each is copied into Cloudinary.
- */
-export async function importBehanceProject(input: {
-  url: string; title: string; description: string; year: string; role: string; images: string[];
-}) {
+// ── Publish / unpublish ───────────────────────────────────────────────────────
+export async function setProjectPublished(id: string, published: boolean) {
   if (!(await isAdminRequest())) return { success: false, error: "Unauthorized. Please log in again." };
-  const { BEHANCE_IMAGE_PREFIX } = await import("@/lib/behanceBookmarklet");
-
-  const title = sanitizeText(input?.title, 200);
-  if (!title) return { success: false, error: "Missing project name." };
-  const images = (Array.isArray(input?.images) ? input.images : [])
-    .filter((u): u is string => typeof u === "string" && u.startsWith(BEHANCE_IMAGE_PREFIX))
-    .slice(0, 20);
-  if (!images.length) return { success: false, error: "No Behance images found for this project." };
-
+  await ensureSchema().catch(() => {});
   try {
-    const existing = await db.select({ clientName: projects.clientName }).from(projects);
-    if (existing.some((p) => p.clientName.trim().toLowerCase() === title.toLowerCase())) {
-      return { success: false, skipped: true, error: "Already on the site — skipped." };
-    }
-
-    const copied: string[] = [];
-    for (const url of images) {
-      const c = await copyToCloudinary(url);
-      if (c) copied.push(c);
-    }
-    if (!copied.length) return { success: false, error: "Couldn't copy the images to Cloudinary." };
-
-    const description = sanitizeText(input.description, 2000) || title;
-    const year = sanitizeText(input.year, 10) || String(new Date().getFullYear());
-    const id = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) + "-" + Date.now().toString(36).slice(-4);
-    const number = String(existing.length + 1).padStart(2, "0");
-    const link = typeof input.url === "string" && /^https:\/\/(www\.)?behance\.net\/gallery\/\d+/.test(input.url) ? input.url.slice(0, 500) : "#";
-
-    await db.insert(projects).values({
-      id, number,
-      clientName: title,
-      year,
-      role: sanitizeText(input.role, 200) || "Designer",
-      services: [],
-      description,
-      tagline: description,
-      href: link,
-      coverImage: copied[0],
-      coverSrcSet: `${copied[0]} 1024w`,
-      swiperImages: copied,
-      imageCaptions: copied.map(() => ""),
-      bgImage: copied[0],
-      bgSrcSet: `${copied[0]} 2048w`,
-    });
-
+    await db.update(projects).set({ published: !!published }).where(eq(projects.id, sanitizeText(id, 100)));
     revalidatePath("/admin");
     revalidatePath("/admin/works");
     revalidatePath("/");
-    return { success: true, id, images: copied.length, failedImages: images.length - copied.length };
+    return { success: true };
   } catch (error) {
-    console.error("Behance import failed:", error);
-    return { success: false, error: "Database error. Failed to import project." };
+    console.error("Failed to change project visibility:", error);
+    return { success: false, error: "Database error. Failed to update the project." };
   }
+}
+
+// ── Import from Behance (server-side) ─────────────────────────────────────────
+/** Step 1: read a Behance project link. */
+export async function readBehanceProject(url: string) {
+  if (!(await isAdminRequest())) return { ok: false as const, error: "Unauthorized. Please log in again." };
+  const { fetchBehanceProject } = await import("@/lib/behance");
+  return fetchBehanceProject(typeof url === "string" ? url.slice(0, 500) : "");
+}
+
+/** Step 2: copy Behance images into Cloudinary, in order. null = that image failed. */
+export async function copyBehanceImages(urls: string[]) {
+  if (!(await isAdminRequest())) return { ok: false as const, error: "Unauthorized. Please log in again." };
+  const { BEHANCE_IMAGE_PREFIX } = await import("@/lib/behance");
+  const list = (Array.isArray(urls) ? urls : []).filter((u) => typeof u === "string" && u.startsWith(BEHANCE_IMAGE_PREFIX)).slice(0, 30);
+  const out: (string | null)[] = [];
+  for (const u of list) out.push(await copyToCloudinary(u));
+  return { ok: true as const, urls: out };
 }

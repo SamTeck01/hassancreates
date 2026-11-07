@@ -15,6 +15,18 @@ http.createServer((req, res) => {
     const body = Buffer.concat(chunks);
     const json = (code, obj) => { res.writeHead(code, { "content-type": "application/json" }); res.end(JSON.stringify(obj)); };
     if (req.method === "GET" && req.url === "/__requests") return json(200, requests);
+    // Fake Behance project pages
+    if (req.method === "GET" && req.url.startsWith("/gallery/111/")) {
+      const CDN = "https://mir-s3-cdn-cf.behance.net/project_modules";
+      res.writeHead(200, { "content-type": "text/html" });
+      return res.end(`<!doctype html><html><head><title>Stance Branding on Behance</title>
+<meta property="og:title" content="Stance Branding on Behance">
+<meta property="og:description" content="Identity &amp; packaging for Stance.">
+<meta property="og:image" content="https://mir-s3-cdn-cf.behance.net/projects/404/abc.png">
+</head><body><img src="${CDN}/max_808/aaa.png"><img src="${CDN}/1400/aaa.png"><img src="${CDN}/disp/bbb.jpg"><img src="${CDN}/1400/bbb.jpg">
+<script>window.d={"project":{"published_on":1767225600,"tags":[{"title":"Branding"},{"title":"Packaging"}]},"m":"https:\\/\\/mir-s3-cdn-cf.behance.net\\/project_modules\\/fs\\/ccc.webp"}</script></body></html>`);
+    }
+    if (req.method === "GET" && req.url.startsWith("/gallery/")) { res.writeHead(404); return res.end("not found"); }
     if (req.method === "POST" && req.url === "/__reset") { requests = []; return json(200, { ok: true }); }
 
     const text = body.toString("latin1");

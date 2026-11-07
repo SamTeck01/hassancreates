@@ -3,6 +3,7 @@ import { projects } from "@/lib/db/schema";
 import { PROJECTS_DATA } from "@/data/projects";
 import WorksClient from "./WorksClient";
 import { rowToProject } from "@/lib/projects";
+import { ensureSchema } from "@/lib/db/ensureSchema";
 import type { Project } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function WorksPage() {
   let dbProjects: Project[] = [];
   try {
+    await ensureSchema();
     dbProjects = (await db.select().from(projects)).map(rowToProject);
     if (!dbProjects || dbProjects.length === 0) {
       for (const p of PROJECTS_DATA) {

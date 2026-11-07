@@ -14,6 +14,8 @@ export interface Project {
   imageCaptions: string[];
   bgImage: string;
   bgSrcSet?: string;
+  /** false = draft, admin only */
+  published?: boolean;
 }
 
 export interface Service {

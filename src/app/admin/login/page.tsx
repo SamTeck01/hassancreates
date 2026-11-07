@@ -16,11 +16,6 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     usernameRef.current?.focus();
-    // The Behance bookmark sends projects in the URL fragment; if we were
-    // bounced here to log in first, remember them for after login.
-    if (window.location.hash.length > 2) {
-      try { sessionStorage.setItem("hc-after-login", "/admin/works/import" + window.location.hash); } catch {}
-    }
   }, []);
 
   const triggerShake = () => {
@@ -44,10 +39,6 @@ export default function AdminLoginPage() {
 
       if (res.ok && data.success) {
         // Redirect to admin dashboard on success
-        // Came from the Behance bookmark? Go back to the import with its data.
-        const back = sessionStorage.getItem("hc-after-login");
-        sessionStorage.removeItem("hc-after-login");
-        if (back) { window.location.href = back; return; }
         router.push("/admin");
         router.refresh();
       } else {

@@ -16,6 +16,8 @@ export const projects = pgTable("projects", {
   imageCaptions: jsonb("image_captions").$type<string[]>().notNull(),
   bgImage: text("bg_image").notNull(),
   bgSrcSet: text("bg_srcset"),
+  /** false = draft (only visible in the admin) */
+  published: boolean("published").notNull().default(true),
 });
 
 export const services = pgTable("services", {
