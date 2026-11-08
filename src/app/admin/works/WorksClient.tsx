@@ -8,6 +8,7 @@ import { addProject, updateProject, deleteProject, reorderProjects, setProjectPu
 import { pauseSmoothScroll, resumeSmoothScroll } from "@/lib/smoothScroll";
 import ProjectImages, { type ProjectImage } from "./ProjectImages";
 import { projectLink } from "@/lib/projectLink";
+import { parseBehanceSource, type BehanceProjectData, type BehanceProfileProject } from "@/lib/behance";
 
 /** Existing project → one image list (gallery images + cover/background if they aren't in the gallery). */
 function projectToImages(p: { swiperImages?: string[]; imageCaptions?: string[]; coverImage?: string; bgImage?: string }): ProjectImage[] {
@@ -226,44 +227,99 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
   const [importUrl, setImportUrl] = useState("");
   const [importMsg, setImportMsg] = useState("");
   const [importing, setImporting] = useState(false);
+  const [importMode, setImportMode] = useState<"link" | "source">("source");
+  const [importSource, setImportSource] = useState("");
+  const [profileList, setProfileList] = useState<(BehanceProfileProject & { pick: boolean; exists: boolean })[] | null>(null);
+
+  /** A project's data → copy images to Cloudinary → open the editor as a draft. */
+  const openImported = async (d: BehanceProjectData) => {
+    const toCopy = [...(d.cover ? [d.cover] : []), ...d.images];
+    setImportMsg(`Copying ${toCopy.length} image(s) to your Cloudinary… (this can take a minute)`);
+    const c = await copyBehanceImages(toCopy);
+    if (!c.ok) { setImportMsg(`✗ ${c.error}`); return; }
+    const coverUrl = d.cover ? c.urls[0] : null;
+    const gallery = (d.cover ? c.urls.slice(1) : c.urls).filter((u): u is string => !!u);
+    const imgs: ProjectImage[] = [
+      ...(coverUrl ? [{ url: coverUrl, caption: "", inGallery: false }] : []),
+      ...gallery.map((url) => ({ url, caption: "", inGallery: true })),
+    ];
+    if (!imgs.length) { setImportMsg("✗ Couldn't copy any images to Cloudinary."); return; }
+    const failed = c.urls.filter((u) => !u).length;
+    reset();
+    setFName(d.title);
+    setFYear(d.year || String(new Date().getFullYear()));
+    setFServices(d.tags.join(", "));
+    setFDesc(d.description);
+    setFTagline(d.description);
+    setFHref(d.url);
+    setFImages(imgs);
+    setFCover(imgs[0].url);
+    setFBg(imgs[0].url);
+    setFPublished(false);
+    closeImport();
+    setModalOpen(true);
+    setNotice(`Imported from Behance${failed ? ` (${failed} image(s) couldn't be copied)` : ""}. Add your role, check everything, then Publish or Save as draft.`);
+  };
+
+  const closeImport = () => {
+    setImportOpen(false); setImportUrl(""); setImportSource(""); setImportMsg(""); setProfileList(null);
+  };
+
   const runImport = async (e: React.FormEvent) => {
     e.preventDefault();
     setImporting(true);
-    setImportMsg("Reading the project from Behance…");
     try {
-      const r = await readBehanceProject(importUrl);
-      if (!r.ok) { setImportMsg(`✗ ${r.error}`); return; }
-      const d = r.data;
-      const toCopy = [...(d.cover ? [d.cover] : []), ...d.images];
-      setImportMsg(`Copying ${toCopy.length} image(s) to your Cloudinary… (this can take a minute)`);
-      const c = await copyBehanceImages(toCopy);
-      if (!c.ok) { setImportMsg(`✗ ${c.error}`); return; }
-      const coverUrl = d.cover ? c.urls[0] : null;
-      const gallery = (d.cover ? c.urls.slice(1) : c.urls).filter((u): u is string => !!u);
-      const imgs: ProjectImage[] = [
-        ...(coverUrl ? [{ url: coverUrl, caption: "", inGallery: false }] : []),
-        ...gallery.map((url) => ({ url, caption: "", inGallery: true })),
-      ];
-      if (!imgs.length) { setImportMsg("✗ Couldn't copy any images to Cloudinary."); return; }
-      const failed = c.urls.filter((u) => !u).length;
-      reset();
-      setFName(d.title);
-      setFYear(d.year || String(new Date().getFullYear()));
-      setFServices(d.tags.join(", "));
-      setFDesc(d.description);
-      setFTagline(d.description);
-      setFHref(d.url);
-      setFImages(imgs);
-      setFCover(imgs[0].url);
-      setFBg(imgs[0].url);
-      setFPublished(false);
-      setImportOpen(false);
-      setImportUrl("");
-      setImportMsg("");
-      setModalOpen(true);
-      setNotice(`Imported from Behance${failed ? ` (${failed} image(s) couldn't be copied)` : ""}. Add your role, check everything, then Publish or Save as draft.`);
+      if (importMode === "link") {
+        setImportMsg("Reading the project from Behance…");
+        const r = await readBehanceProject(importUrl);
+        if (!r.ok) {
+          setImportMsg(`✗ ${r.error}${/refused/.test(r.error) ? " Use \u201cPaste page source\u201d instead — it always works." : ""}`);
+          return;
+        }
+        await openImported(r.data);
+        return;
+      }
+      setImportMsg("Reading the page source…");
+      const r = parseBehanceSource(importSource);
+      if (r.kind === "none") { setImportMsg(`✗ ${r.error}`); return; }
+      if (r.kind === "project") { await openImported(r.data); return; }
+      const has = (p: BehanceProfileProject) =>
+        list.some((x) => (x.href || "").includes(`/gallery/${p.id}`) || x.clientName.trim().toLowerCase() === p.title.toLowerCase());
+      setProfileList(r.projects.map((p) => ({ ...p, exists: has(p), pick: !has(p) && !!p.cover })));
+      setImportMsg(`Found ${r.projects.length} project(s) on your profile. Tick the ones to add — they're saved as drafts with their cover image.`);
     } catch {
       setImportMsg("✗ Something went wrong. Try again.");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const importProfile = async () => {
+    if (!profileList) return;
+    const picked = profileList.filter((p) => p.pick && p.cover);
+    if (!picked.length) return;
+    setImporting(true);
+    let done = 0, failed = 0;
+    const added: Project[] = [];
+    try {
+      for (const p of picked) {
+        setImportMsg(`Adding ${done + failed + 1} of ${picked.length}: ${p.title}…`);
+        const c = await copyBehanceImages([p.cover!]).catch(() => null);
+        const url = c && c.ok ? c.urls[0] : null;
+        if (!url) { failed++; continue; }
+        const id = p.title.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").slice(0, 60) + "-" + p.id.slice(-4);
+        const full = {
+          id, number: String(list.length + added.length + 1).padStart(2, "0"),
+          published: false, clientName: p.title, year: p.year || String(new Date().getFullYear()),
+          role: "Visual & Brand Designer", services: [], description: p.title, tagline: p.title, href: p.url,
+          ...imagesToFields([{ url, caption: "", inGallery: true }], url, url),
+        };
+        const r = await addProject(full).catch(() => ({ success: false }));
+        if (r.success) { done++; added.push(full as Project); } else failed++;
+      }
+      if (added.length) setList((l) => [...l, ...added]);
+      setProfileList((l) => l && l.map((p) => (added.some((a) => a.href === p.url) ? { ...p, exists: true, pick: false } : p)));
+      setImportMsg(`${failed ? "✗ " : ""}Added ${done} draft(s)${failed ? `, ${failed} failed` : ""}. To bring in a project's full gallery, paste that project's page source here, or open the draft and add images.`);
     } finally {
       setImporting(false);
     }
@@ -556,17 +612,65 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
       </Modal>
 
       {/* ── Import from Behance ── */}
-      <Modal open={importOpen} onClose={() => !importing && setImportOpen(false)} title="Import from Behance">
+      <Modal open={importOpen} onClose={() => !importing && closeImport()} title="Import from Behance">
         <form onSubmit={runImport} className="flex flex-col gap-4">
-          <div>
-            <label htmlFor="behance-url" className={labelCls}>Behance project link</label>
-            <input id="behance-url" className={inputCls} value={importUrl} onChange={(e) => setImportUrl(e.target.value)} placeholder="https://www.behance.net/gallery/123456/Project-Name" inputMode="url" autoComplete="off" disabled={importing} />
-            <p className="text-[11px] text-white/40 mt-1.5">Open the project on Behance, copy its link, paste it here. You&apos;ll review everything before it goes on the website.</p>
+          <div role="tablist" className="flex gap-2">
+            {(["source", "link"] as const).map((m) => (
+              <button key={m} type="button" role="tab" aria-selected={importMode === m} disabled={importing}
+                onClick={() => { setImportMode(m); setImportMsg(""); setProfileList(null); }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border ${importMode === m ? "bg-[#6B21D9] border-[#6B21D9] text-white" : "border-white/10 text-white/50 hover:text-white"}`}>
+                {m === "source" ? "Paste page source" : "Project link"}
+              </button>
+            ))}
           </div>
+          {importMode === "link" ? (
+            <div>
+              <label htmlFor="behance-url" className={labelCls}>Behance project link</label>
+              <input id="behance-url" className={inputCls} value={importUrl} onChange={(e) => setImportUrl(e.target.value)} placeholder="https://www.behance.net/gallery/123456/Project-Name" inputMode="url" autoComplete="off" disabled={importing} />
+              <p className="text-[11px] text-white/40 mt-1.5">Behance sometimes blocks this. If it does, use &ldquo;Paste page source&rdquo;.</p>
+            </div>
+          ) : (
+            <div>
+              <label htmlFor="behance-source" className={labelCls}>Behance page source</label>
+              <textarea id="behance-source" className={`${inputCls} h-32 font-mono text-[11px]`} value={importSource} onChange={(e) => { setImportSource(e.target.value); setProfileList(null); }} placeholder="Paste the whole page source here…" spellCheck={false} disabled={importing} />
+              <label className="inline-flex items-center gap-2 mt-2 text-[11px] text-white/60 cursor-pointer">
+                <span className="px-2.5 py-1 rounded-md border border-white/15 hover:text-white">Or upload saved .html file</span>
+                <input type="file" accept=".html,.htm,text/html" className="sr-only" aria-label="Upload saved Behance page" disabled={importing}
+                  onChange={async (e) => { const f = e.target.files?.[0]; if (f) { setImportSource(await f.text()); setProfileList(null); setImportMsg(`Loaded ${f.name}. Press Read page.`); } e.target.value = ""; }} />
+              </label>
+              <p className="text-[11px] text-white/40 mt-1.5">
+                Open your Behance profile (adds all projects as drafts with covers) or one project (adds it with every image).
+                On a computer: right-click → View Page Source → select all → copy. On Android Chrome: put <code>view-source:</code> before the link.
+              </p>
+            </div>
+          )}
+          {profileList && (
+            <ul className="max-h-60 overflow-y-auto flex flex-col gap-1.5 border border-white/10 rounded-xl p-2" aria-label="Projects found">
+              {profileList.map((p) => (
+                <li key={p.id}>
+                  <label className={`flex items-center gap-3 p-1.5 rounded-lg ${p.exists ? "opacity-50" : "hover:bg-white/5 cursor-pointer"}`}>
+                    <input type="checkbox" checked={p.pick} disabled={importing || p.exists || !p.cover}
+                      onChange={(e) => setProfileList((l) => l && l.map((x) => (x.id === p.id ? { ...x, pick: e.target.checked } : x)))} />
+                    {p.cover && <img src={p.cover.replace(/\/projects\/[a-z0-9_]+\//, "/projects/202/")} alt="" className="w-12 h-9 object-cover rounded" />}
+                    <span className="text-xs text-white/80 flex-1">{p.title}</span>
+                    <span className="text-[10px] text-white/40">{p.exists ? "already added" : p.year}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          )}
           {importMsg && <p role="status" className={`text-xs px-3 py-2 rounded-lg border ${importMsg.startsWith("✗") ? "text-red-400 bg-red-950/20 border-red-900/20" : "text-white/70 bg-white/5 border-white/10"}`}>{importMsg}</p>}
           <div className="flex justify-end gap-3">
-            <button type="button" onClick={() => setImportOpen(false)} disabled={importing} className="px-4 py-2 text-xs font-semibold text-white/45 hover:text-white">Cancel</button>
-            <button type="submit" disabled={importing || !importUrl.trim()} className="bg-[#6B21D9] hover:bg-[#7c3aed] text-white font-bold text-xs px-5 py-2.5 rounded-xl disabled:opacity-40">{importing ? "Importing…" : "Import project"}</button>
+            <button type="button" onClick={closeImport} disabled={importing} className="px-4 py-2 text-xs font-semibold text-white/45 hover:text-white">{profileList ? "Done" : "Cancel"}</button>
+            {profileList ? (
+              <button type="button" onClick={importProfile} disabled={importing || !profileList.some((p) => p.pick)} className="bg-[#6B21D9] hover:bg-[#7c3aed] text-white font-bold text-xs px-5 py-2.5 rounded-xl disabled:opacity-40">
+                {importing ? "Adding…" : `Add ${profileList.filter((p) => p.pick).length} as drafts`}
+              </button>
+            ) : (
+              <button type="submit" disabled={importing || !(importMode === "link" ? importUrl.trim() : importSource.trim())} className="bg-[#6B21D9] hover:bg-[#7c3aed] text-white font-bold text-xs px-5 py-2.5 rounded-xl disabled:opacity-40">
+                {importing ? "Importing…" : importMode === "link" ? "Import project" : "Read page"}
+              </button>
+            )}
           </div>
         </form>
       </Modal>

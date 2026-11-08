@@ -97,3 +97,89 @@ export async function fetchBehanceProject(input: string): Promise<FetchResult> {
   if (!data.images.length) return { ok: false, error: "Found the project but no images in it." };
   return { ok: true, data };
 }
+
+// ── Pasted / uploaded page source (no request to Behance at all) ──
+
+export interface BehanceProfileProject {
+  id: string;
+  url: string;
+  title: string;
+  year: string;
+  cover: string | null;
+}
+
+export type BehanceSourceResult =
+  | { kind: "project"; data: BehanceProjectData }
+  | { kind: "profile"; projects: BehanceProfileProject[] }
+  | { kind: "none"; error: string };
+
+function pickCover(node: Record<string, unknown>): string | null {
+  const all = ((node.covers as { allAvailable?: { url?: string; type?: string; width?: number | null }[] } | undefined)?.allAvailable ?? [])
+    .filter((c) => typeof c.url === "string" && c.url.startsWith(BEHANCE_IMAGE_PREFIX));
+  const pref = ["/projects/max_808/", "/projects/808/", "/projects/404/"]; // /original/ redirects to a 404
+  for (const p of pref) {
+    const hit = all.find((c) => c.url!.includes(p));
+    if (hit) return hit.url!;
+  }
+  return all.find((c) => !c.url!.includes("/original")  && !c.url!.includes("_webp/"))?.url ?? null;
+}
+
+/** Profile page source → its projects (newest layout first, as on Behance). */
+export function parseBehanceProfile(rawHtml: string): BehanceProfileProject[] {
+  const seen = new Map<string, BehanceProfileProject>();
+  const add = (id: string, p: Omit<BehanceProfileProject, "id">) => { if (!seen.has(id)) seen.set(id, { id, ...p }); };
+
+  // 1) The JSON state Behance embeds in the page
+  const json = rawHtml.match(/<script[^>]*id=["']beconfig-store_state["'][^>]*>([\s\S]*?)<\/script>/i)?.[1];
+  if (json) {
+    try {
+      const walk = (v: unknown) => {
+        if (Array.isArray(v)) { v.forEach(walk); return; }
+        if (!v || typeof v !== "object") return;
+        const o = v as Record<string, unknown>;
+        if (o.__typename === "Project" && o.id && typeof o.name === "string" && o.covers) {
+          const ts = Number(o.publishedOn);
+          add(String(o.id), {
+            url: normaliseBehanceUrl(String(o.url ?? "")) ?? `https://www.behance.net/gallery/${o.id}`,
+            title: decode(o.name).trim(),
+            year: ts ? String(new Date(ts * 1000).getUTCFullYear()) : "",
+            cover: pickCover(o),
+          });
+        }
+        Object.values(o).forEach(walk);
+      };
+      walk(JSON.parse(json));
+    } catch { /* fall through to the page markup */ }
+  }
+
+  // 2) Fallback: the project cards in the page markup
+  if (!seen.size) {
+    const html = rawHtml.replace(/\\\//g, "/");
+    const re = /href="(?:https:\/\/www\.behance\.net)?\/gallery\/(\d+)\/[^"]*"[^>]*title="Link to project - ([^"]+)"/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(html))) {
+      const id = m[1];
+      const img = html.match(new RegExp(`https://mir-s3-cdn-cf\\.behance\\.net/projects/(?:404|max_808|808)/[a-z0-9]*${id}\\.[A-Za-z0-9.,_-]+`))?.[0] ?? null;
+      add(id, { url: `https://www.behance.net/gallery/${id}`, title: decode(m[2]).trim(), year: "", cover: img });
+    }
+  }
+  return [...seen.values()].filter((p) => p.title);
+}
+
+/** Decide what was pasted: one project page, a profile page, or neither. */
+export function parseBehanceSource(rawHtml: string): BehanceSourceResult {
+  const html = typeof rawHtml === "string" ? rawHtml : "";
+  if (!/behance/i.test(html)) return { kind: "none", error: "That doesn't look like a Behance page. Copy the whole page source (or upload the saved .html file)." };
+  const canonical = html.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["']/i)?.[1]
+    ?? html.match(/<meta[^>]+property=["']og:url["'][^>]+content=["']([^"']+)["']/i)?.[1] ?? "";
+  const projectUrl = normaliseBehanceUrl(canonical);
+  if (projectUrl) {
+    const data = parseBehanceHtml(html, projectUrl);
+    if (data.images.length) return { kind: "project", data };
+  }
+  const projects = parseBehanceProfile(html);
+  if (projects.length) return { kind: "profile", projects };
+  const loose = parseBehanceHtml(html, projectUrl ?? "");
+  if (loose.images.length) return { kind: "project", data: loose };
+  return { kind: "none", error: "Couldn't find any projects or images in that page. Make sure you copied the whole source." };
+}
