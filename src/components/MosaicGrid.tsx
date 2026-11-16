@@ -9,11 +9,11 @@ import { sized } from "@/lib/work";
  * rounded cards in staggered columns, tilted on a diagonal and fading into
  * black at the edges. Filled with images from Hassan's client projects.
  */
-const COLUMNS = 5;
+const COLUMNS = 6;
 const PER_COLUMN = 5;
 // card shapes per column, so neighbouring columns never line up
 const SHAPES = ["aspect-[4/3]", "aspect-[16/11]", "aspect-[1/1]", "aspect-[16/10]", "aspect-[5/4]"];
-const OFFSETS = ["-12%", "-2%", "-18%", "-6%", "-14%"]; // vertical stagger per column
+const OFFSETS = ["-12%", "-2%", "-18%", "-6%", "-14%", "-4%"]; // vertical stagger per column
 
 function pickImages(projects: Project[], count: number): string[] {
   // round-robin across projects so every client shows up, skipping covers
@@ -43,22 +43,22 @@ export default function MosaicGrid({ projects = [] }: { projects?: Project[] }) 
 
   return (
     <section aria-label="A selection of client work" className="w-full bg-white flex justify-center pb-6 pt-0 px-1 md:px-3">
-      <div className="relative w-full max-w-[1400px] overflow-hidden rounded-[24px] aspect-[2848/1604] max-sm:aspect-[4/5] bg-[#050505]">
+      <div className="relative w-full max-w-[1400px] overflow-hidden rounded-[24px] aspect-[2848/1604] bg-[#050505]">
         {/* the tilted wall of work */}
         <div
           aria-hidden="true"
-          className="absolute left-1/2 top-1/2 w-[150%] max-sm:w-[260%] flex gap-[1.4%] max-sm:gap-[2.4%]"
+          className="absolute left-1/2 top-1/2 w-[165%] flex gap-[1.3%]"
           style={{ transform: "translate(-50%, -50%) perspective(2400px) rotateX(12deg) rotateZ(-14deg)" }}
         >
           {columns.map((col, c) => (
-            <div key={c} className="flex-1 flex flex-col gap-[7%] max-sm:gap-[5%]" style={{ transform: `translateY(${OFFSETS[c]})` }}>
+            <div key={c} className="flex-1 flex flex-col gap-[6%]" style={{ transform: `translateY(${OFFSETS[c]})` }}>
               {col.map((src, r) => (
                 <div
                   key={r}
                   className={`relative ${SHAPES[(c + r) % SHAPES.length]} rounded-[clamp(10px,1.6vw,26px)] overflow-hidden bg-[#141414] shadow-[0_30px_60px_rgba(0,0,0,0.55)]`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={sized(src, 640)} alt="" loading={c < 3 ? "eager" : "lazy"} decoding="async" className="absolute inset-0 w-full h-full object-cover" />
+                  <img src={sized(src, 900)} alt="" loading={c < 3 ? "eager" : "lazy"} decoding="async" className="absolute inset-0 w-full h-full object-cover" />
                   {/* glassy rim, like the original cards */}
                   <span className="absolute inset-0 rounded-[inherit] ring-1 ring-inset ring-white/12 bg-gradient-to-b from-white/[0.06] to-transparent" />
                 </div>
