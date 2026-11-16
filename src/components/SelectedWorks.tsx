@@ -9,6 +9,8 @@ const PhotoViewer = dynamic(() => import("./PhotoViewer"), {
 import { Project } from "@/types";
 import { PROJECTS_DATA } from "@/data/projects";
 import BlurredBg from "./BlurredBg";
+import Link from "next/link";
+import { sized } from "@/lib/work";
 
 const NOISE_IMG =
   "https://framerusercontent.com/images/hiGYz6grmhAHSeZuNKHEuchTGTw.png";
@@ -82,9 +84,9 @@ function WorkCard({
               width={2848}
               height={1588}
               sizes="(min-width: 1440px) max(max(min(100vw, 1920px) - 16px, 1px), 1px), (min-width: 810px) and (max-width: 1439.98px) max(max(min(100vw, 1920px) - 16px, 1px), 1px), (max-width: 809.98px) max(calc(min(100vw, 1920px) - 16px), 1px)"
-              srcSet={project.bgSrcSet}
-              src={project.bgImage}
-              alt="BG Image"
+              srcSet={project.bgImage.includes("res.cloudinary.com") ? undefined : project.bgSrcSet}
+              src={sized(project.bgImage, 900)}
+              alt=""
               className="block w-full h-full rounded-[inherit] object-cover object-center blur-[28px] scale-[1.1]"
             />
           </div>
@@ -160,7 +162,7 @@ function WorkCard({
               {/* Image + Click to View Button Container */}
               <div className="flex flex-col gap-3 shrink-0 w-[300px] min-[1440px]:w-[456px] max-[809px]:w-[160px] max-[809px]:shrink-0 self-stretch">
                 <a
-                  href={project.href}
+                  href={`/work/${project.id}`}
                   onClick={(e) => {
                     e.preventDefault();
                     onSelect(project.id);
@@ -178,9 +180,9 @@ function WorkCard({
                       width={912}
                       height={1140}
                       sizes="(min-width: 1440px) 456px, (min-width: 810px) and (max-width: 1439.98px) 300px, (max-width: 809.98px) 300px"
-                      srcSet={project.coverSrcSet}
-                      src={project.coverImage}
-                      alt="Cover Image"
+                      srcSet={project.coverImage.includes("res.cloudinary.com") ? `${sized(project.coverImage, 500)} 500w, ${sized(project.coverImage, 1000)} 1000w` : project.coverSrcSet}
+                      src={sized(project.coverImage, 1000)}
+                      alt={`${project.clientName} cover`}
                       className="block w-full h-full rounded-[inherit] object-cover object-center"
                     />
                   </div>
@@ -238,6 +240,8 @@ function WorkCard({
   );
 }
 
+const HOME_LIMIT = 6;
+
 export default function SelectedWorks({ initialProjects }: { initialProjects?: Project[] }) {
   const [isMobile, setIsMobile] = useState(false);
   const [projects, setProjects] = useState<Project[]>(initialProjects ?? PROJECTS_DATA);
@@ -285,7 +289,7 @@ export default function SelectedWorks({ initialProjects }: { initialProjects?: P
 
           {/* framer-oh5ifz */}
           <div className="flex flex-col relative" data-framer-name="Bottom">
-            {projects.map((project, index) => {
+            {projects.slice(0, HOME_LIMIT).map((project, index, shown) => {
               const layoutProject = {
                 ...project,
                 stickyTop: 80 + index * 16,
@@ -296,7 +300,7 @@ export default function SelectedWorks({ initialProjects }: { initialProjects?: P
                 <WorkCard
                   key={project.id}
                   project={layoutProject}
-                  isLast={index === projects.length - 1}
+                  isLast={index === shown.length - 1}
                   isMobile={isMobile}
                   onSelect={setActivePhotoProject}
                   total={projects.length}
@@ -304,6 +308,18 @@ export default function SelectedWorks({ initialProjects }: { initialProjects?: P
               );
             })}
           </div>
+
+          {projects.length > 0 && (
+            <div className="flex flex-col items-center gap-4 py-10 max-[809px]:py-6 px-6 text-center">
+              <Link
+                href="/work"
+                className="inline-flex h-14 items-center px-8 rounded-full bg-brand-purple text-white font-kyiv-sans text-[16px] hover:bg-brand-purple-dark transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-purple"
+              >
+                See all {projects.length} projects
+              </Link>
+              <p className="font-kyiv-sans text-[14px] text-[#5c5c5c]">Each project has its own page with every image.</p>
+            </div>
+          )}
         </div>
       </section>
 

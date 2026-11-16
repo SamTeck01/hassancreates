@@ -19,7 +19,7 @@ export default function Footer() {
   useEffect(() => {
     const updateTime = () => {
       const timeStr = new Date().toLocaleTimeString("en-GB", {
-        timeZone: "Europe/London",
+        timeZone: "Africa/Lagos",
         hour: "2-digit",
         minute: "2-digit",
         second: "2-digit",
@@ -98,10 +98,10 @@ export default function Footer() {
               </span>
               <div className="flex flex-col gap-4">
                 {[
-                  { label: "About", href: "#about" },
-                  { label: "Works", href: "#works" },
-                  { label: "Services", href: "#about" },
-                  { label: "Blog", href: "#" }
+                  { label: "Work", href: "/work" },
+                  { label: "About", href: "/about" },
+                  { label: "Services", href: "/#about" },
+                  { label: "Contact", href: "/contact" }
                 ].map((item) => (
                   <a
                     key={item.label}
@@ -123,7 +123,9 @@ export default function Footer() {
               <div className="flex flex-col gap-4">
                 {[
                   { label: "LinkedIn", href: "https://linkedin.com/in/hassan-okesanjo-46a948353" },
-                  { label: "Behance", href: "https://behance.net/hassanokesanjo1" }
+                  { label: "Behance", href: "https://behance.net/hassanokesanjo1" },
+                  { label: "X (Twitter)", href: "https://x.com/hassancreates" },
+                  { label: "Instagram", href: "https://instagram.com/hassancreates_" }
                 ].map((item) => (
                   <a
                     key={item.label}
@@ -139,15 +141,15 @@ export default function Footer() {
               </div>
             </div>
 
-            {/* Column 3: Legals */}
+            {/* Column 3: Get in touch */}
             <div className="flex flex-col items-start col-span-2 md:col-span-1">
               <span className="text-[11px] uppercase tracking-[0.2em] text-white/40 font-kyiv-sans font-semibold mb-6 select-none">
-                Legals
+                Get in touch
               </span>
               <div className="flex flex-col gap-4">
                 {[
-                  { label: "Privacy Policy", href: "#" },
-                  { label: "Term of Service", href: "#" }
+                  { label: "hokesanjn@gmail.com", href: "mailto:hokesanjn@gmail.com" },
+                  { label: "Start a project", href: "/contact" }
                 ].map((item) => (
                   <a
                     key={item.label}
@@ -169,7 +171,7 @@ export default function Footer() {
             </div>
 
             <div className="font-mono tracking-wider">
-              London &rarr; {londonTime || "12:00:00"}
+              Lagos, {londonTime || "12:00:00"}
             </div>
 
             <a

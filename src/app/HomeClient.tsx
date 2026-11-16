@@ -30,7 +30,7 @@ export default function HomeClient({ projects }: { projects: Project[] }) {
       <Hero />
 
       {/* Mosaic Grid */}
-      <MosaicGrid />
+      <MosaicGrid projects={projects} />
 
       {/* Client Logos */}
       <ClientLogos />

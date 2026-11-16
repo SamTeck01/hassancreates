@@ -1,6 +1,8 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 
 const PURPLE = "#6B21D9";
@@ -8,11 +10,20 @@ const PURPLE = "#6B21D9";
 interface HeaderProps {
   isMenuOpen: boolean;
   onToggleMenu: () => void;
+  /** "welcome" = the home pill; "nav" = inner pages (name + page links) */
+  variant?: "welcome" | "nav";
 }
 
-export default function Header({ isMenuOpen, onToggleMenu }: HeaderProps) {
+const NAV = [
+  { label: "Work", href: "/work" },
+  { label: "About", href: "/about" },
+  { label: "Contact", href: "/contact" },
+];
+
+export default function Header({ isMenuOpen, onToggleMenu, variant = "welcome" }: HeaderProps) {
+  const path = usePathname();
   return (
-    <header className="absolute top-14 left-0 right-0 z-50 flex justify-center px-6 pointer-events-none">
+    <header className={`${variant === "nav" ? "fixed top-5" : "absolute top-14"} left-0 right-0 z-50 flex justify-center px-4 sm:px-6 pointer-events-none`}>
       <motion.div
         // Figma: 647×63, rounded-[31.5px], bg=#6B21D9, big layered shadow
         className="pointer-events-auto relative w-full max-w-[647px] flex items-center justify-between overflow-hidden cursor-pointer select-none"
@@ -27,7 +38,7 @@ export default function Header({ isMenuOpen, onToggleMenu }: HeaderProps) {
         }}
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.8 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: variant === "nav" ? 0.1 : 0.8 }}
         whileHover={{ y: -2 }}
       >
         {/* Glossy highlight */}
@@ -39,7 +50,23 @@ export default function Header({ isMenuOpen, onToggleMenu }: HeaderProps) {
           }}
         />
 
-        {/* "Welcome to my Portfolio!" – Figma: KyivType Titling Medium 500, 20px, -0.03em */}
+        {variant === "nav" ? (
+          <nav aria-label="Main" className="relative z-10 flex items-center gap-5 sm:gap-7 min-w-0">
+            <Link href="/" className="text-white font-kyiv font-bold tracking-[-0.03em] leading-none text-[18px] sm:text-[20px] whitespace-nowrap">
+              Hassan
+            </Link>
+            {NAV.map((n) => {
+              const active = path === n.href || path.startsWith(n.href + "/");
+              return (
+                <Link key={n.href} href={n.href} aria-current={active ? "page" : undefined}
+                  className={`hidden sm:block font-kyiv-sans text-[15px] leading-none transition-colors ${active ? "text-white custom-underline" : "text-white/70 hover:text-white"}`}>
+                  {n.label}
+                </Link>
+              );
+            })}
+          </nav>
+        ) : (
+        /* "Welcome to my Portfolio!" – Figma: KyivType Titling Medium 500, 20px, -0.03em */
         <span
           className="relative z-10 text-white font-kyiv font-medium tracking-[-0.03em] leading-none"
           style={{ fontSize: 20 }}
@@ -47,6 +74,7 @@ export default function Header({ isMenuOpen, onToggleMenu }: HeaderProps) {
           Welcome to my{" "}
           <span className="custom-underline font-bold">Portfolio!</span>
         </span>
+        )}
 
         {/* Palette Toggle Button */}
         <button
@@ -54,6 +82,7 @@ export default function Header({ isMenuOpen, onToggleMenu }: HeaderProps) {
           className="relative z-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors focus:outline-none flex-shrink-0 cursor-pointer"
           style={{ width: 41, height: 41 }}
           aria-label="Toggle menu"
+          aria-expanded={isMenuOpen}
         >
           <motion.div
             animate={{ rotate: isMenuOpen ? [0, -10, 15, 0] : 0 }}

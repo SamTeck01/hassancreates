@@ -115,9 +115,10 @@ export default function MenuOverlay({ isOpen, onClose }: MenuOverlayProps) {
         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking links wrapper
       >
         {[
-          { label: "Works", href: "#works" },
-          { label: "About", href: "#about" },
-          { label: "Contact", href: "#contact" },
+          { label: "Home", href: "/" },
+          { label: "Work", href: "/work" },
+          { label: "About", href: "/about" },
+          { label: "Contact", href: "/contact" },
         ].map((item) => (
           <motion.div key={item.href} variants={itemVariants}>
             <motion.a

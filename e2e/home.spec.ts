@@ -35,12 +35,10 @@ test.describe("home page", () => {
     const close = page.getByRole("button", { name: "Close menu" });
     await expect(close).toBeVisible();
     // The menu link (not the hero's "View my works")
-    await page.getByRole("navigation").getByRole("link", { name: "Works" }).click();
-    const menu = page.getByRole("dialog", { name: "Site menu", includeHidden: true });
-    await expect(menu).toHaveAttribute("inert", "");
-    await expect(close).not.toBeInViewport({ ratio: 0.01 }).catch(() => {}); // faded
-    await expect(page.getByRole("button", { name: "Close menu" })).toHaveCount(0); // not exposed when closed
-    await expect.poll(() => page.evaluate(() => document.querySelector("#works")!.getBoundingClientRect().top)).toBeLessThan(400);
+    await page.getByRole("dialog", { name: "Site menu" }).getByRole("link", { name: "Work", exact: true }).click();
+    await page.waitForURL("**/work");
+    await expect(page.getByRole("heading", { level: 1, name: "Work" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Close menu" })).toHaveCount(0); // menu closed on the new page
     t.expectClean();
   });
 });
@@ -50,10 +48,13 @@ test.describe("works cards", () => {
     const projects = await (await request.get("/api/projects")).json();
     expect(projects.length).toBeGreaterThan(0);
     await page.goto("/", { waitUntil: "networkidle" });
-    await expect(page.locator(".cardWrapper")).toHaveCount(projects.length);
+    // The home page shows the first 6; the rest are one click away
+    const shown = projects.slice(0, 6);
+    await expect(page.locator(".cardWrapper")).toHaveCount(shown.length);
     const nospace = (x: string) => x.replace(/\s+/g, "");
     const cardText = nospace((await page.locator(".cardWrapper").allTextContents()).join(" "));
-    for (const p of projects) expect(cardText).toContain(nospace(p.clientName));
+    for (const p of shown) expect(cardText).toContain(nospace(p.clientName));
+    await expect(page.getByRole("link", { name: `See all ${projects.length} projects` })).toHaveAttribute("href", "/work");
   });
 
   test("exit motion: shrink + tilt everywhere; blur on desktop, fade on mobile", async ({ page }) => {

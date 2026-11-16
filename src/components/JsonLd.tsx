@@ -18,8 +18,8 @@ const personSchema = {
   ],
   address: {
     "@type": "PostalAddress",
-    addressLocality: "London",
-    addressCountry: "GB",
+    addressLocality: "Lagos",
+    addressCountry: "NG",
   },
   knowsAbout: [
     "Brand Identity Design",
@@ -58,8 +58,8 @@ const professionalServiceSchema = {
   priceRange: "££",
   address: {
     "@type": "PostalAddress",
-    addressLocality: "London",
-    addressCountry: "GB",
+    addressLocality: "Lagos",
+    addressCountry: "NG",
   },
   sameAs: [
     "https://linkedin.com/in/hassan-okesanjo-46a948353",
@@ -73,7 +73,7 @@ const websiteSchema = {
   name: "hassancreates",
   url: SITE_URL,
   description:
-    "Portfolio of Hassan Okesanjo — Visual & Motion Designer based in London.",
+    "Portfolio of Hassan Okesanjo — Visual & Brand Designer based in Lagos, Nigeria.",
   author: {
     "@type": "Person",
     name: "Hassan Okesanjo",

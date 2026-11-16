@@ -20,11 +20,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
 
   title: {
-    default: "Hassan Okesanjo | Visual & Motion Designer — hassancreates.design",
+    default: "Hassan Okesanjo — Visual & Brand Designer",
     template: "%s | hassancreates",
   },
   description:
-    "Hassan is a Visual and Motion Designer based in Nigeria. Specialising in brand identity, motion graphics, UI/UX design, and creative direction. Available for freelance projects worldwide.",
+    "Hassan Okesanjo is a visual and brand designer in Lagos, Nigeria. Brand identity, visual and motion design for Web3 teams like Fhenix, Zama, Arcium and Drosera. Available for freelance and full-time work.",
 
   keywords: [
     // Brand
@@ -47,11 +47,12 @@ export const metadata: Metadata = {
     "Rebranding",
     "Design Portfolio",
     // Location & intent
-    "Freelance Designer London",
-    "Freelance Graphic Designer UK",
+    "Freelance Designer Lagos",
+    "Brand Designer Nigeria",
+    "Web3 Brand Designer",
     "Motion Designer for Hire",
     "Brand Designer Portfolio",
-    "Creative Portfolio 2025",
+    
     // Long-tail
     "Visual designer for startups",
     "Motion design for brands",
@@ -70,7 +71,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Hassan Okesanjo | Visual & Motion Designer",
     description:
-      "I turn ideas into visuals that stick. Portfolio of Hassan Okesanjo — Visual & Motion Designer based in London, UK. Brand identity, motion graphics, UI/UX.",
+      "I turn ideas into visuals that stick. Portfolio of Hassan Okesanjo — Visual & Brand Designer based in Lagos, Nigeria. Brand identity, motion graphics, UI/UX.",
     url: SITE_URL,
     siteName: "hassancreates",
     locale: "en_US",
@@ -81,7 +82,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Hassan Okesanjo | Visual & Motion Designer",
     description:
-      "I turn ideas into visuals that stick. Portfolio of Hassan — Visual & Motion Designer based in London.",
+      "I turn ideas into visuals that stick. Portfolio of Hassan — Visual & Brand Designer based in Lagos, Nigeria.",
     creator: "@hassancreates",
   },
 

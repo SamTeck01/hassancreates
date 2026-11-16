@@ -74,7 +74,7 @@ export default function Image() {
               textTransform: "uppercase",
             }}
           >
-            Visual &amp; Motion Designer · London
+            Visual &amp; Brand Designer · Lagos
           </div>
 
           {/* Name */}
