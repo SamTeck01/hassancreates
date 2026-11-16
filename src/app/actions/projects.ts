@@ -274,7 +274,14 @@ export async function copyBehanceImages(urls: string[]) {
       const loc = h.headers.get("location");
       if (h.status >= 300 && h.status < 400 && loc && /^https:\/\/mir-(s3-cdn-cf|cdn)\.behance\.net\//.test(loc)) src = loc;
     } catch { /* try the original link */ }
-    out.push((await copyToCloudinary(src)) ?? (src !== u ? await copyToCloudinary(u) : null));
+    let copied = (await copyToCloudinary(src)) ?? (src !== u ? await copyToCloudinary(u) : null);
+    // Over Cloudinary's 10 MB limit? Behance's WebP of the same size is much smaller.
+    const webp = u.replace(/\/project_modules\/(fs|max_\d+|\d+)\//, "/project_modules/$1_webp/").replace("/project_modules/fs_webp/", "/project_modules/max_3840_webp/");
+    if (!copied && webp !== u) copied = await copyToCloudinary(webp);
+    // Last resort for huge GIFs: Behance's smaller display size
+    const disp = u.replace(/\/project_modules\/[a-z0-9_]+\//, "/project_modules/disp/");
+    if (!copied && disp !== u) copied = await copyToCloudinary(disp);
+    out.push(copied);
   }
   return { ok: true as const, urls: out };
 }
