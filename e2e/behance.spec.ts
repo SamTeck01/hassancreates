@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { TEST_ADMIN } from "../playwright.config";
-import { normaliseBehanceUrl, parseBehanceHtml, parseBehanceSource } from "../src/lib/behance";
+import { normaliseBehanceUrl, parseBehanceHtml, parseBehanceSource, parseBehanceExport } from "../src/lib/behance";
 
 const CDN = "https://mir-s3-cdn-cf.behance.net/project_modules";
 
@@ -142,4 +142,19 @@ test.describe("admin import from pasted source (fake Cloudinary)", () => {
     await found.getByRole("checkbox").nth(1).uncheck();
     await expect(page.getByRole("button", { name: "Add 1 as drafts" })).toBeEnabled();
   });
+});
+
+test("parseBehanceExport: browser-helper JSON → clean images, services, description", () => {
+  const P = "https://mir-s3-cdn-cf.behance.net/project_modules";
+  const r = parseBehanceExport("```json\n" + JSON.stringify([
+    { id: "256037871", description: "Palm wine is one of Africa's oldest drinks, rich with history.Yet it is packaged badly, served in informal settings, and seen as a low-value lo...",
+      text: ["From US$500", "Photoshop", "Advertising", "Branding", "No use is allowed without explicit permission from owner"],
+      images: [`${P}/fs/a.jpg`, `${P}/max_3840_webp/b.png`, `${P}/max_1200_webp/c.gif`, `${P}/fs/a.jpg`, "https://evil.example/x.png"] },
+    { id: "nope", images: [] },
+  ]) + "\n```")!;
+  expect(r).toHaveLength(1);
+  expect(r[0].description).toBe("Palm wine is one of Africa's oldest drinks, rich with history.");
+  expect(r[0].services).toEqual(["Advertising", "Branding"]);
+  expect(r[0].images).toEqual([`${P}/fs/a.jpg`, `${P}/max_3840/b.png`, `${P}/max_1200/c.gif`]);
+  expect(parseBehanceExport("<html>")).toBeNull();
 });

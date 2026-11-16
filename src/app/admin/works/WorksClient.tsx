@@ -8,7 +8,7 @@ import { addProject, updateProject, deleteProject, reorderProjects, setProjectPu
 import { pauseSmoothScroll, resumeSmoothScroll } from "@/lib/smoothScroll";
 import ProjectImages, { type ProjectImage } from "./ProjectImages";
 import { projectLink } from "@/lib/projectLink";
-import { parseBehanceSource, type BehanceProjectData, type BehanceProfileProject } from "@/lib/behance";
+import { parseBehanceSource, parseBehanceExport, type BehanceProjectData, type BehanceProfileProject, type BehanceExportItem } from "@/lib/behance";
 
 /** Existing project → one image list (gallery images + cover/background if they aren't in the gallery). */
 function projectToImages(p: { swiperImages?: string[]; imageCaptions?: string[]; coverImage?: string; bgImage?: string }): ProjectImage[] {
@@ -230,6 +230,8 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
   const [importMode, setImportMode] = useState<"link" | "source">("source");
   const [importSource, setImportSource] = useState("");
   const [profileList, setProfileList] = useState<(BehanceProfileProject & { pick: boolean; exists: boolean })[] | null>(null);
+  const [fillList, setFillList] = useState<(BehanceExportItem & { project: Project | null; pick: boolean; status?: string })[] | null>(null);
+  const projectForGallery = (galleryId: string) => list.find((x) => (x.href || "").includes(`/gallery/${galleryId}`)) ?? null;
 
   /** A project's data → copy images to Cloudinary → open the editor as a draft. */
   const openImported = async (d: BehanceProjectData) => {
@@ -262,7 +264,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
   };
 
   const closeImport = () => {
-    setImportOpen(false); setImportUrl(""); setImportSource(""); setImportMsg(""); setProfileList(null);
+    setImportOpen(false); setImportUrl(""); setImportSource(""); setImportMsg(""); setProfileList(null); setFillList(null);
   };
 
   const runImport = async (e: React.FormEvent) => {
@@ -280,6 +282,15 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
         return;
       }
       setImportMsg("Reading the page source…");
+      const exported = parseBehanceExport(importSource);
+      if (exported) {
+        if (!exported.length) { setImportMsg("✗ That list has no Behance projects in it."); return; }
+        const rows = exported.map((it) => { const project = projectForGallery(it.id); return { ...it, project, pick: !!project && it.images.length > 0 }; });
+        setFillList(rows);
+        const matched = rows.filter((r) => r.project).length;
+        setImportMsg(`Found ${exported.length} project(s); ${matched} match projects already on your site. Their images, description and services will be filled in. Nothing else changes.`);
+        return;
+      }
       const r = parseBehanceSource(importSource);
       if (r.kind === "none") { setImportMsg(`✗ ${r.error}`); return; }
       if (r.kind === "project") { await openImported(r.data); return; }
@@ -289,6 +300,51 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
       setImportMsg(`Found ${r.projects.length} project(s) on your profile. Tick the ones to add — they're saved as drafts with their cover image.`);
     } catch {
       setImportMsg("✗ Something went wrong. Try again.");
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  /** Fill existing projects with every image + description + services from the browser helper's list. */
+  const fillProjects = async () => {
+    if (!fillList) return;
+    const rows = fillList.filter((r) => r.pick && r.project);
+    if (!rows.length) return;
+    setImporting(true);
+    let ok = 0, bad = 0;
+    const setStatus = (id: string, status: string) => setFillList((l) => l && l.map((x) => (x.id === id ? { ...x, status } : x)));
+    try {
+      for (const [n, row] of rows.entries()) {
+        const p = row.project!;
+        const urls: string[] = [];
+        let failed = 0;
+        for (let i = 0; i < row.images.length; i += 6) {
+          setImportMsg(`Project ${n + 1} of ${rows.length} (${p.clientName}): copying images ${i + 1}–${Math.min(i + 6, row.images.length)} of ${row.images.length}…`);
+          const c = await copyBehanceImages(row.images.slice(i, i + 6)).catch(() => null);
+          if (!c || !c.ok) { failed += Math.min(6, row.images.length - i); continue; }
+          c.urls.forEach((u) => (u ? urls.push(u) : failed++));
+        }
+        if (!urls.length) { bad++; setStatus(row.id, "✗ no images copied"); continue; }
+        const gallery: ProjectImage[] = urls.map((url) => ({ url, caption: "", inGallery: true }));
+        const cover = p.coverImage || urls[0];
+        const images = gallery.some((g) => g.url === cover) ? gallery : [{ url: cover, caption: "", inGallery: false }, ...gallery];
+        const payload = {
+          published: p.published !== false,
+          clientName: p.clientName, year: p.year, role: p.role,
+          services: row.services.length ? row.services : p.services,
+          description: row.description || p.description,
+          tagline: row.description ? row.description.split(/(?<=\.)\s/)[0].slice(0, 160) : p.tagline,
+          href: p.href,
+          ...imagesToFields(images, cover, p.bgImage || cover),
+        };
+        const r = await updateProject(p.id, payload).catch(() => ({ success: false, error: "Network error." }));
+        if (r.success) {
+          ok++;
+          setList((l) => l.map((x) => (x.id === p.id ? { ...x, ...payload } : x)));
+          setStatus(row.id, `✓ ${urls.length} image(s)${failed ? `, ${failed} failed` : ""}`);
+        } else { bad++; setStatus(row.id, `✗ ${r.error || "save failed"}`); }
+      }
+      setImportMsg(`${bad ? "✗ " : ""}Filled ${ok} project(s)${bad ? `, ${bad} failed` : ""}.`);
     } finally {
       setImporting(false);
     }
@@ -632,7 +688,7 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
           ) : (
             <div>
               <label htmlFor="behance-source" className={labelCls}>Behance page source</label>
-              <textarea id="behance-source" className={`${inputCls} h-32 font-mono text-[11px]`} value={importSource} onChange={(e) => { setImportSource(e.target.value); setProfileList(null); }} placeholder="Paste the whole page source here…" spellCheck={false} disabled={importing} />
+              <textarea id="behance-source" className={`${inputCls} h-32 font-mono text-[11px]`} value={importSource} onChange={(e) => { setImportSource(e.target.value); setProfileList(null); setFillList(null); }} placeholder="Paste the whole page source here…" spellCheck={false} disabled={importing} />
               <label className="inline-flex items-center gap-2 mt-2 text-[11px] text-white/60 cursor-pointer">
                 <span className="px-2.5 py-1 rounded-md border border-white/15 hover:text-white">Or upload saved .html file</span>
                 <input type="file" accept=".html,.htm,text/html" className="sr-only" aria-label="Upload saved Behance page" disabled={importing}
@@ -659,10 +715,28 @@ export default function WorksClient({ initialProjects }: { initialProjects: Proj
               ))}
             </ul>
           )}
+          {fillList && (
+            <ul className="max-h-60 overflow-y-auto flex flex-col gap-1.5 border border-white/10 rounded-xl p-2" aria-label="Projects to fill">
+              {fillList.map((r) => (
+                <li key={r.id}>
+                  <label className={`flex items-center gap-3 p-1.5 rounded-lg ${r.project ? "hover:bg-white/5 cursor-pointer" : "opacity-50"}`}>
+                    <input type="checkbox" checked={r.pick} disabled={importing || !r.project || !r.images.length}
+                      onChange={(e) => setFillList((l) => l && l.map((x) => (x.id === r.id ? { ...x, pick: e.target.checked } : x)))} />
+                    <span className="text-xs text-white/80 flex-1">{r.project?.clientName ?? `Not on your site (Behance #${r.id})`}</span>
+                    <span className="text-[10px] text-white/40">{r.status ?? `${r.images.length} image(s)`}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          )}
           {importMsg && <p role="status" className={`text-xs px-3 py-2 rounded-lg border ${importMsg.startsWith("✗") ? "text-red-400 bg-red-950/20 border-red-900/20" : "text-white/70 bg-white/5 border-white/10"}`}>{importMsg}</p>}
           <div className="flex justify-end gap-3">
-            <button type="button" onClick={closeImport} disabled={importing} className="px-4 py-2 text-xs font-semibold text-white/45 hover:text-white">{profileList ? "Done" : "Cancel"}</button>
-            {profileList ? (
+            <button type="button" onClick={closeImport} disabled={importing} className="px-4 py-2 text-xs font-semibold text-white/45 hover:text-white">{profileList || fillList ? "Done" : "Cancel"}</button>
+            {fillList ? (
+              <button type="button" onClick={fillProjects} disabled={importing || !fillList.some((r) => r.pick)} className="bg-[#6B21D9] hover:bg-[#7c3aed] text-white font-bold text-xs px-5 py-2.5 rounded-xl disabled:opacity-40">
+                {importing ? "Filling…" : `Fill ${fillList.filter((r) => r.pick).length} project(s)`}
+              </button>
+            ) : profileList ? (
               <button type="button" onClick={importProfile} disabled={importing || !profileList.some((p) => p.pick)} className="bg-[#6B21D9] hover:bg-[#7c3aed] text-white font-bold text-xs px-5 py-2.5 rounded-xl disabled:opacity-40">
                 {importing ? "Adding…" : `Add ${profileList.filter((p) => p.pick).length} as drafts`}
               </button>

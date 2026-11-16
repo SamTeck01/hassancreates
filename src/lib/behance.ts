@@ -183,3 +183,45 @@ export function parseBehanceSource(rawHtml: string): BehanceSourceResult {
   if (loose.images.length) return { kind: "project", data: loose };
   return { kind: "none", error: "Couldn't find any projects or images in that page. Make sure you copied the whole source." };
 }
+
+// ── JSON collected by the browser helper (one entry per project) ──
+
+export interface BehanceExportItem {
+  id: string;
+  description: string;
+  services: string[];
+  images: string[];
+}
+
+const NOT_SERVICES = /^(from us\$|no use is allowed|read more|photoshop|illustrator|after effects|figma|blender|cinema 4d|indesign|premiere|lightroom)/i;
+
+/** "_webp" sizes are re-encoded; the same size without it is the original format. */
+export const behanceOriginalFormat = (u: string) => u.replace(/\/project_modules\/([a-z0-9_]+?)_webp\//, "/project_modules/$1/");
+
+export function parseBehanceExport(raw: string): BehanceExportItem[] | null {
+  const t = raw.trim().replace(/^```(?:json)?\s*|\s*```$/g, "");
+  if (!t.startsWith("[")) return null;
+  let data: unknown;
+  try { data = JSON.parse(t); } catch { return null; }
+  if (!Array.isArray(data)) return null;
+  const out: BehanceExportItem[] = [];
+  for (const it of data as Record<string, unknown>[]) {
+    const id = String(it?.id ?? "").match(/^\d+$/)?.[0];
+    if (!id) continue;
+    // Behance squashes paragraphs together ("community.Yet") — put the space back
+    let description = (typeof it.description === "string" ? it.description : "").replace(/([.!?)])(?=[A-Za-z])/g, "$1 ").replace(/\s+/g, " ").trim();
+    // …and cuts long ones with "..." — end on the last full sentence instead
+    if (description.endsWith("...")) {
+      const cut = description.slice(0, -3);
+      const last = cut.search(/[.!?][^.!?]*$/);
+      description = last > 40 ? cut.slice(0, last + 1) : cut.trim() + "…";
+    }
+    const text = Array.isArray(it.text) ? it.text.filter((x): x is string => typeof x === "string").map((x) => x.trim()) : [];
+    const services = text.filter((x) => x.length <= 30 && !NOT_SERVICES.test(x) && !/[.!?]$/.test(x) && x !== description);
+    const images = (Array.isArray(it.images) ? it.images : [])
+      .filter((u): u is string => typeof u === "string" && u.startsWith(BEHANCE_IMAGE_PREFIX + "project_modules/"))
+      .map(behanceOriginalFormat);
+    out.push({ id, description, services: [...new Set(services)].slice(0, 6), images: [...new Set(images)] });
+  }
+  return out;
+}

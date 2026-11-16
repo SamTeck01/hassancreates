@@ -81,10 +81,10 @@ export async function addProject(data: {
       coverImage: safeCoverImage,
       coverSrcSet: sanitizeText(data.coverSrcSet, 1000) || `${safeCoverImage} 1024w`,
       swiperImages: Array.isArray(data.swiperImages)
-        ? data.swiperImages.map(u => sanitizeImageUrl(u)).filter(Boolean).slice(0, 20)
+        ? data.swiperImages.map(u => sanitizeImageUrl(u)).filter(Boolean).slice(0, 100)
         : [safeCoverImage],
       imageCaptions: Array.isArray(data.imageCaptions)
-        ? data.imageCaptions.map(c => sanitizeText(c, 300)).slice(0, 20)
+        ? data.imageCaptions.map(c => sanitizeText(c, 300)).slice(0, 100)
         : ["Project showcase image."],
       bgImage: safeBgImage,
       bgSrcSet: sanitizeText(data.bgSrcSet, 1000) || `${safeBgImage} 2048w`,
@@ -142,10 +142,10 @@ export async function updateProject(id: string, data: {
       coverImage: safeCoverImage,
       coverSrcSet: sanitizeText(data.coverSrcSet, 1000) || `${safeCoverImage} 1024w`,
       swiperImages: Array.isArray(data.swiperImages)
-        ? data.swiperImages.map(u => sanitizeImageUrl(u)).filter(Boolean).slice(0, 20)
+        ? data.swiperImages.map(u => sanitizeImageUrl(u)).filter(Boolean).slice(0, 100)
         : [safeCoverImage],
       imageCaptions: Array.isArray(data.imageCaptions)
-        ? data.imageCaptions.map(c => sanitizeText(c, 300)).slice(0, 20)
+        ? data.imageCaptions.map(c => sanitizeText(c, 300)).slice(0, 100)
         : ["Project showcase image."],
       bgImage: safeBgImage,
       bgSrcSet: sanitizeText(data.bgSrcSet, 1000) || `${safeBgImage} 2048w`,
@@ -266,6 +266,15 @@ export async function copyBehanceImages(urls: string[]) {
   const { BEHANCE_IMAGE_PREFIX } = await import("@/lib/behance");
   const list = (Array.isArray(urls) ? urls : []).filter((u) => typeof u === "string" && u.startsWith(BEHANCE_IMAGE_PREFIX)).slice(0, 30);
   const out: (string | null)[] = [];
-  for (const u of list) out.push(await copyToCloudinary(u));
+  for (const u of list) {
+    // Some Behance sizes 302 to a second image host; hand Cloudinary the final link
+    let src = u;
+    try {
+      const h = await fetch(u, { method: "HEAD", redirect: "manual", signal: AbortSignal.timeout(8000), cache: "no-store" });
+      const loc = h.headers.get("location");
+      if (h.status >= 300 && h.status < 400 && loc && /^https:\/\/mir-(s3-cdn-cf|cdn)\.behance\.net\//.test(loc)) src = loc;
+    } catch { /* try the original link */ }
+    out.push((await copyToCloudinary(src)) ?? (src !== u ? await copyToCloudinary(u) : null));
+  }
   return { ok: true as const, urls: out };
 }
