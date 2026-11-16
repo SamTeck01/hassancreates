@@ -292,6 +292,7 @@ export default function SelectedWorks({ initialProjects }: { initialProjects?: P
             {projects.slice(0, HOME_LIMIT).map((project, index, shown) => {
               const layoutProject = {
                 ...project,
+                number: String(index + 1).padStart(2, "0"),
                 stickyTop: 80 + index * 16,
                 zIndex: 10 + index,
               };

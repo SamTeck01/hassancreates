@@ -69,7 +69,7 @@ export const metadata: Metadata = {
   },
 
   openGraph: {
-    title: "Hassan Okesanjo | Visual & Motion Designer",
+    title: "Hassan Okesanjo | Visual & Brand Designer",
     description:
       "I turn ideas into visuals that stick. Portfolio of Hassan Okesanjo — Visual & Brand Designer based in Lagos, Nigeria. Brand identity, motion graphics, UI/UX.",
     url: SITE_URL,
@@ -80,7 +80,7 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title: "Hassan Okesanjo | Visual & Motion Designer",
+    title: "Hassan Okesanjo | Visual & Brand Designer",
     description:
       "I turn ideas into visuals that stick. Portfolio of Hassan — Visual & Brand Designer based in Lagos, Nigeria.",
     creator: "@hassancreates",

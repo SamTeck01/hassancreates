@@ -11,10 +11,14 @@ test.describe("SEO (crawler view, JavaScript disabled)", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveAccessibleName("I turn ideas into visuals that stick.");
     const projects = await (await request.get("/api/projects")).json();
     const nospace = (x: string) => x.replace(/\s+/g, "");
-    for (const p of projects) expect(nospace(text)).toContain(nospace(p.clientName));
+    for (const p of projects.slice(0, 5)) expect(nospace(text)).toContain(nospace(p.clientName));
     // textContent, not innerText: the marquee is CSS-uppercased
     const raw = await page.evaluate(() => document.body.textContent ?? "");
     for (const s of ["Services", "Recent Works", "4 Years of Experience"]) expect(raw).toContain(s);
+    // every project is crawlable from /work, server-rendered
+    await page.goto("/work");
+    const work = nospace(await page.evaluate(() => document.body.innerText));
+    for (const p of projects) expect(work).toContain(nospace(p.clientName));
   });
 
   test("metadata, canonical, JSON-LD, icons, share image", async ({ page, request, baseURL }) => {

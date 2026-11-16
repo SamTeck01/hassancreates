@@ -8,9 +8,9 @@ const personSchema = {
   "@type": "Person",
   name: "Hassan Okesanjo",
   url: SITE_URL,
-  jobTitle: "Visual & Motion Designer",
+  jobTitle: "Visual & Brand Designer",
   description:
-    "Hassan Okesanjo is a Visual and Motion Designer based in Nigeria, specialising in brand identity, motion graphics, UI/UX design, and creative direction.",
+    "Hassan Okesanjo is a Visual and Brand Designer based in Nigeria, specialising in brand identity, motion graphics, UI/UX design, and creative direction.",
   image: `${SITE_URL}/avatar.png`,
   sameAs: [
     "https://linkedin.com/in/hassan-okesanjo-46a948353",
@@ -41,7 +41,7 @@ const professionalServiceSchema = {
   logo: `${SITE_URL}/pfp.png`,
   image: `${SITE_URL}/opengraph-image.png`,
   description:
-    "Visual & Motion Design studio by Hassan Okesanjo. Services include brand identity, motion graphics, UI/UX, web design, and social media design.",
+    "Visual & Brand Design studio by Hassan Okesanjo. Services include brand identity, motion graphics, UI/UX, web design, and social media design.",
   founder: {
     "@type": "Person",
     name: "Hassan Okesanjo",

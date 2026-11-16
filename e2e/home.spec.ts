@@ -81,7 +81,7 @@ test.describe("works cards", () => {
 
   test("each project opens the right gallery and closes", async ({ page, request }) => {
     const t = trackErrors(page);
-    const projects = await (await request.get("/api/projects")).json();
+    const projects = (await (await request.get("/api/projects")).json()).slice(0, 6);
     await page.goto("/", { waitUntil: "networkidle" });
     for (let i = 0; i < projects.length; i++) {
       const p = projects[i];
@@ -162,7 +162,7 @@ test("hero cycles through every title, incl. 'a Brand Designer', without overflo
 });
 
 test("no 'View Project' button leads to a missing page", async ({ page, request }) => {
-  const projects = await (await request.get("/api/projects")).json();
+  const projects = (await (await request.get("/api/projects")).json()).slice(0, 6);
   await page.goto("/", { waitUntil: "networkidle" });
   for (let i = 0; i < projects.length; i++) {
     const btn = page.locator(".cardWrapper").nth(i).getByRole("button", { name: "Click to View" });
