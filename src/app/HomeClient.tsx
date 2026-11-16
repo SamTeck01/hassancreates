@@ -24,7 +24,7 @@ export default function HomeClient({ projects }: { projects: Project[] }) {
   return (
     <div className="relative min-h-screen flex flex-col justify-between text-brand-text bg-white" style={{ overflowX: "clip" }}>
       {/* Welcome Pill Navigation Bar */}
-      <Header isMenuOpen={isMenuOpen} onToggleMenu={() => setIsMenuOpen(!isMenuOpen)} />
+      <Header variant="nav" isMenuOpen={isMenuOpen} onToggleMenu={() => setIsMenuOpen(!isMenuOpen)} />
 
       {/* Hero Section */}
       <Hero />

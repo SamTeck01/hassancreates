@@ -35,7 +35,8 @@ test.describe("multi-page site", () => {
     await expect(page.getByText(p.year, { exact: true }).first()).toBeVisible();
     const imgs = page.getByRole("region", { name: `${p.clientName} images` }).locator("img");
     await expect(imgs).toHaveCount((p.swiperImages?.length || 1));
-    if (projects.length > 1) await expect(page.getByRole("navigation", { name: "Next project" })).toContainText(projects[1].clientName);
+    await expect(page.getByRole("heading", { name: "About this project" })).toBeVisible();
+    if (projects.length > 1) await expect(page.getByRole("region", { name: "More by Hassan" })).toContainText(projects[1].clientName);
     await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", new RegExp(`/work/${p.id}$`));
     t.expectClean();
   });

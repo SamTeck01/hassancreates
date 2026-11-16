@@ -85,15 +85,18 @@ test.describe("works cards", () => {
     await page.goto("/", { waitUntil: "networkidle" });
     for (let i = 0; i < projects.length; i++) {
       const p = projects[i];
-      const btn = page.locator(".cardWrapper").nth(i).getByRole("button", { name: "Click to View" });
+      const btn = page.locator(".cardWrapper").nth(i).getByRole("button", { name: "View case study" });
       await btn.scrollIntoViewIfNeeded();
       await btn.click();
       const dialog = page.getByRole("dialog");
       await expect(dialog).toBeVisible();
       await expect(dialog.getByRole("heading", { level: 1 })).toHaveText(p.clientName);
-      await expect(dialog.locator(`img[alt="${p.clientName} image slide 1"]`)).toBeAttached();
+      // every image of the project is in the case study, in order
+      await expect(dialog.getByRole("region", { name: `${p.clientName} images` }).locator("img")).toHaveCount(p.swiperImages?.length || 1);
+      await expect(page).toHaveURL(new RegExp(`/work/${p.id}$`)); // shareable address
       await page.keyboard.press("Escape");
       await expect(dialog).toBeHidden();
+      await expect(page).toHaveURL(/\/$/);
     }
     t.expectClean();
   });
@@ -161,22 +164,44 @@ test("hero cycles through every title, incl. 'a Brand Designer', without overflo
   expect([...seen].sort()).toEqual(["Hassan!", "a Brand Designer", "a Motion Designer", "a Visual Designer"]);
 });
 
-test("no 'View Project' button leads to a missing page", async ({ page, request }) => {
-  const projects = (await (await request.get("/api/projects")).json()).slice(0, 6);
+test("case study sheet: slides up, More by Hassan switches project, full page link, Back closes", async ({ page, request }) => {
+  const t = trackErrors(page);
+  const projects = await (await request.get("/api/projects")).json();
+  test.skip(projects.length < 2, "needs two projects");
   await page.goto("/", { waitUntil: "networkidle" });
-  for (let i = 0; i < projects.length; i++) {
-    const btn = page.locator(".cardWrapper").nth(i).getByRole("button", { name: "Click to View" });
-    await btn.focus(); // keyboard: cards are always animating, so mouse clicks wait for "stable"
-    await page.keyboard.press("Enter");
-    await expect(page.getByRole("dialog").getByRole("heading", { level: 1 })).toHaveText(projects[i].clientName);
-    await page.waitForTimeout(300); // let the open animation + key listener settle
-    const link = page.getByRole("dialog").getByRole("link", { name: "View Project" });
-    if (await link.count()) {
-      const href = (await link.getAttribute("href"))!;
-      expect(href, projects[i].clientName).toMatch(/^https?:\/\//);
-      expect(href).not.toContain("/works/");
-    }
-    await page.keyboard.press("Escape");
-    await expect(page.getByRole("dialog")).toBeHidden();
+  const btn = page.locator(".cardWrapper").first().getByRole("button", { name: "View case study" });
+  await btn.focus(); // cards are always animating, so mouse clicks wait for "stable"
+  await page.keyboard.press("Enter");
+  const dialog = page.getByRole("dialog", { name: projects[0].clientName });
+  await expect(dialog).toBeVisible();
+  await expect(page.getByRole("button", { name: "Close case study" })).toBeFocused();
+  await expect(dialog.getByRole("heading", { name: "About this project" })).toBeAttached();
+  await expect(dialog.getByRole("link", { name: "Work with Hassan" })).toHaveAttribute("href", "/contact");
+  // a project from "More by Hassan" opens in the same sheet
+  const more = dialog.getByRole("region", { name: "More by Hassan" }).getByRole("listitem").first().getByRole("link");
+  const href = (await more.getAttribute("href"))!;
+  const next = projects.find((p: { id: string }) => href.endsWith(`/work/${p.id}`));
+  await more.scrollIntoViewIfNeeded();
+  await more.click();
+  await expect(page.getByRole("dialog").getByRole("heading", { level: 1 })).toHaveText(next.clientName);
+  await expect(page).toHaveURL(new RegExp(`/work/${next.id}$`));
+  await expect(page.getByRole("dialog").getByRole("link", { name: "Open full page" })).toHaveAttribute("href", `/work/${next.id}`);
+  // browser Back closes it
+  await page.goBack();
+  await expect(page.getByRole("dialog")).toBeHidden();
+  t.expectClean();
+});
+
+test("home makes the other pages obvious", async ({ page }) => {
+  await page.goto("/", { waitUntil: "networkidle" });
+  const nav = page.getByRole("navigation", { name: "Main" });
+  for (const [name, href] of [["Work", "/work"], ["About", "/about"], ["Contact", "/contact"]]) {
+    await expect(nav.getByRole("link", { name, exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name, exact: true })).toHaveAttribute("href", href);
   }
+  await expect(page.getByRole("link", { name: /View my works/ })).toHaveAttribute("href", "/work");
+  // the menu stays reachable after scrolling
+  await page.mouse.wheel(0, 3000);
+  await page.waitForTimeout(800);
+  await expect(nav.getByRole("link", { name: "Work", exact: true })).toBeInViewport();
 });

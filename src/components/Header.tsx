@@ -51,15 +51,15 @@ export default function Header({ isMenuOpen, onToggleMenu, variant = "welcome" }
         />
 
         {variant === "nav" ? (
-          <nav aria-label="Main" className="relative z-10 flex items-center gap-5 sm:gap-7 min-w-0">
-            <Link href="/" className="text-white font-kyiv font-bold tracking-[-0.03em] leading-none text-[18px] sm:text-[20px] whitespace-nowrap">
+          <nav aria-label="Main" className="relative z-10 flex items-center gap-4 sm:gap-7 min-w-0">
+            <Link href="/" aria-current={path === "/" ? "page" : undefined} className="text-white font-kyiv font-bold tracking-[-0.03em] leading-none text-[17px] sm:text-[20px] whitespace-nowrap mr-1 sm:mr-2">
               Hassan
             </Link>
             {NAV.map((n) => {
               const active = path === n.href || path.startsWith(n.href + "/");
               return (
                 <Link key={n.href} href={n.href} aria-current={active ? "page" : undefined}
-                  className={`hidden sm:block font-kyiv-sans text-[15px] leading-none transition-colors ${active ? "text-white custom-underline" : "text-white/70 hover:text-white"}`}>
+                  className={`font-kyiv-sans text-[14px] sm:text-[15px] leading-none transition-colors ${active ? "text-white custom-underline" : "text-white/70 hover:text-white"}`}>
                   {n.label}
                 </Link>
               );

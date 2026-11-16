@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { motion, useScroll, useTransform, useMotionTemplate, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
-const PhotoViewer = dynamic(() => import("./PhotoViewer"), {
+const CaseStudySheet = dynamic(() => import("./CaseStudySheet"), {
   ssr: false,
 });
 import { Project } from "@/types";
@@ -195,7 +195,7 @@ function WorkCard({
                   whileTap={{ scale: 0.98 }}
                   transition={{ type: "spring", stiffness: 400, damping: 25 }}
                 >
-                  Click to View
+                  View case study
                 </motion.button>
               </div>
 
@@ -326,8 +326,10 @@ export default function SelectedWorks({ initialProjects }: { initialProjects?: P
 
       <AnimatePresence>
         {activePhotoProject && (
-          <PhotoViewer
+          <CaseStudySheet
             projectId={activePhotoProject}
+            projects={projects}
+            onChange={setActivePhotoProject}
             onClose={() => setActivePhotoProject(null)}
           />
         )}

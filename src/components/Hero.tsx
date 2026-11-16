@@ -245,7 +245,7 @@ export default function Hero() {
         >
           <MagneticButton
             as="a"
-            href="#works"
+            href="/work"
             radius={60}
             className="h-[58px] px-7 rounded-full bg-white border border-[#6B21D9] text-[#6B21D9] text-[15px] font-medium font-kyiv-sans flex items-center gap-2 hover:bg-[#FAF6FF] transition-colors shadow-[0_4px_14px_rgba(107,33,217,0.08)] cursor-pointer"
           >

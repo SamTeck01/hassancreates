@@ -95,7 +95,7 @@ test("reorder works: ↓ then ↑ changes the homepage order and restores it", a
   // Homepage follows the new order
   await expect.poll(async () => {
     await page.goto("/", { waitUntil: "networkidle" });
-    return page.locator(".cardWrapper").first().getByRole("button", { name: "Click to View" }).count();
+    return page.locator(".cardWrapper").first().getByRole("button", { name: "View case study" }).count();
   }).toBeGreaterThan(0);
 
   // Put it back exactly as it was
