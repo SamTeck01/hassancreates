@@ -45,7 +45,14 @@ function imagesFor(service: Service, matched: Project[]): string[] {
   if (own.length >= 2) return own;
   const still = (u: string) => !!u && !/\.gif($|\?)/i.test(u);
   const out: string[] = [...own];
-  for (const p of matched) if (still(p.coverImage) && !out.includes(p.coverImage)) out.push(p.coverImage);
+  // one image per client first ("Fhenix" and "Fhenix Motion" share a look)
+  const brand = (p: Project) => p.clientName.trim().split(/\s+/)[0].toLowerCase();
+  const seen = new Set<string>();
+  for (const p of matched) {
+    if (seen.has(brand(p)) || !still(p.coverImage) || out.includes(p.coverImage)) continue;
+    seen.add(brand(p));
+    out.push(p.coverImage);
+  }
   for (const p of matched) {
     const g = projectImages(p).filter(still);
     const pick = g[Math.min(1, g.length - 1)];
