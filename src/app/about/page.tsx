@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 const EXPERIENCE = [
   { role: "Lead Designer", org: "Switch Labs", place: "Lagos, Nigeria" },
-  { role: "Visual and Motion Designer", org: "Fhenix", place: "Tel Aviv, Israel · remote" },
+  { role: "Visual and Motion Designer", org: "Fhenix", place: "Remote" },
   { role: "Designer", org: "The Afrinix", place: "" },
   { role: "Graphic Designer", org: "BeatCoin", place: "" },
 ];

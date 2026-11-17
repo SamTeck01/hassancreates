@@ -38,18 +38,20 @@ function projectsFor(service: Service, projects: Project[]): Project[] {
   });
 }
 
-/** Two images per service: admin-set ones first, else from matching projects. */
+/** Images per service: admin-set ones first, else the covers of matching
+ *  projects (finished, framed pictures), then a still from their galleries. */
 function imagesFor(service: Service, matched: Project[]): string[] {
   const own = [service.image1, service.image2].filter((u) => u && /^https?:\/\//.test(u));
   if (own.length >= 2) return own;
-  const fromWork: string[] = [];
+  const still = (u: string) => !!u && !/\.gif($|\?)/i.test(u);
+  const out: string[] = [...own];
+  for (const p of matched) if (still(p.coverImage) && !out.includes(p.coverImage)) out.push(p.coverImage);
   for (const p of matched) {
-    const g = projectImages(p);
-    const pick = g[Math.min(1, g.length - 1)] ?? p.coverImage;
-    if (pick && !fromWork.includes(pick)) fromWork.push(pick);
-    if (fromWork.length >= 3) break;
+    const g = projectImages(p).filter(still);
+    const pick = g[Math.min(1, g.length - 1)];
+    if (pick && !out.includes(pick)) out.push(pick);
   }
-  return [...own, ...fromWork].slice(0, 3);
+  return out.slice(0, 3);
 }
 
 export default function Services({ projects = [] }: { projects?: Project[] }) {
