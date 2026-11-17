@@ -1,402 +1,182 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, useMotionTemplate } from "framer-motion";
-import StaggeredText from "./StaggeredText";
-
-import { Service } from "@/types";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import type { Project, Service } from "@/types";
 import { SERVICES_DATA } from "@/data/services";
+import { projectImages, sized } from "@/lib/work";
 
-/* ─────────────────────────────────────────────
-   Arrow Icon Component (↗)
-   ───────────────────────────────────────────── */
-interface ArrowIconProps {
-  className?: string;
+/** Words that tie a service to a project's fields / role. */
+const MATCH: Record<string, string[]> = {
+  brand: ["brand", "logo", "identity", "rebrand"],
+  identity: ["brand", "logo", "identity"],
+  logo: ["logo", "brand"],
+  visual: ["visual", "graphic", "illustration", "social", "web3", "thread", "cover"],
+  graphic: ["graphic", "visual", "illustration"],
+  social: ["social", "thread", "cover", "visual"],
+  motion: ["motion", "animation", "video", "after effects"],
+  event: ["event", "merch"],
+  ad: ["advert", "ads", "ad ", "campaign", "packaging"],
+  ads: ["advert", "ads", "campaign"],
+  pitch: ["pitch", "deck", "presentation"],
+  deck: ["pitch", "deck", "presentation"],
+  web: ["web", "website", "ui", "landing"],
+  ui: ["ui", "ux", "interface", "app"],
+};
+
+function projectsFor(service: Service, projects: Project[]): Project[] {
+  const words = service.title.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  const keys = [...new Set(words.flatMap((w) => MATCH[w] ?? (w.length > 3 ? [w] : [])))];
+  if (!keys.length) return [];
+  return projects.filter((p) => {
+    const hay = ` ${[...p.services, p.role, p.clientName].join(" ").toLowerCase()} `;
+    return keys.some((k) => hay.includes(k));
+  });
 }
 
-function ArrowIcon({ className }: ArrowIconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <line x1="7" y1="17" x2="17" y2="7" />
-      <polyline points="7 7 17 7 17 17" />
-    </svg>
-  );
+/** Two images per service: admin-set ones first, else from matching projects. */
+function imagesFor(service: Service, matched: Project[]): string[] {
+  const own = [service.image1, service.image2].filter((u) => u && /^https?:\/\//.test(u));
+  if (own.length >= 2) return own;
+  const fromWork: string[] = [];
+  for (const p of matched) {
+    const g = projectImages(p);
+    const pick = g[Math.min(1, g.length - 1)] ?? p.coverImage;
+    if (pick && !fromWork.includes(pick)) fromWork.push(pick);
+    if (fromWork.length >= 3) break;
+  }
+  return [...own, ...fromWork].slice(0, 3);
 }
 
-interface ImageStackPreviewProps {
-  service: Service;
-  isMobile: boolean;
-}
-
-function ImageStackPreview({ service, isMobile }: ImageStackPreviewProps) {
-  const backX = isMobile ? -8 : -14;
-  const frontX = isMobile ? 8 : 14;
-
-  return (
-    <motion.div
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      style={{ transformStyle: "preserve-3d" }}
-      className="absolute inset-0 flex items-center justify-center pointer-events-none"
-    >
-      {/* Background shadow glow */}
-      <div 
-        className="absolute w-[60px] h-[60px] md:w-[110px] md:h-[140px] rounded-full bg-[radial-gradient(closest-side,rgba(168,85,247,0.08),rgba(168,85,247,0))]" 
-        style={{ transform: "translateZ(-30px)" }}
-      />
-
-      {/* Back Image Card (Left side, tilted slightly backward in Z-space) */}
-      <motion.div
-        variants={{
-          initial: { 
-            opacity: 0, 
-            scale: 0.85, 
-            x: isMobile ? -14 : -20, 
-            rotate: -15,
-            clipPath: isMobile ? "none" : "inset(10% 10% 10% 10% round 8px)"
-          },
-          animate: { 
-            opacity: 0.85, 
-            scale: 0.95, 
-            x: backX, 
-            rotate: -6,
-            clipPath: isMobile ? "none" : "inset(0% 0% 0% 0% round 8px)",
-            transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] }
-          },
-          exit: { 
-            opacity: 0, 
-            scale: 0.85, 
-            x: isMobile ? -14 : -20, 
-            rotate: -15,
-            clipPath: isMobile ? "none" : "inset(10% 10% 10% 10% round 8px)",
-            transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] }
-          }
-        }}
-        style={{ 
-          transformStyle: "preserve-3d",
-          z: -10
-        }}
-        className="absolute w-[50px] h-[65px] md:w-[110px] md:h-[140px] bg-[#0E0E10] rounded-[8px] md:rounded-[12px] shadow-[0_8px_24px_rgba(0,0,0,0.1)] overflow-hidden border border-white/5 z-0"
-      >
-        {service.image1 ? (
-          // eslint-disable-next-line @next/next/no-img-element -- admin-uploaded URLs of unknown host/size
-          <img
-            src={service.image1}
-            alt={`${service.title} preview illustration`}
-            className="w-full h-full object-cover opacity-75"
-          />
-        ) : (
-          <div className="w-full h-full bg-white/5" />
-        )}
-      </motion.div>
-
-      {/* Front Image Card (Right side, overlapping, floating forward in Z-space) */}
-      <motion.div
-        variants={{
-          initial: { 
-            opacity: 0, 
-            scale: 0.85, 
-            x: isMobile ? 14 : 20, 
-            rotate: 15,
-            clipPath: isMobile ? "none" : "inset(10% 10% 10% 10% round 8px)"
-          },
-          animate: { 
-            opacity: 1, 
-            scale: 1, 
-            x: frontX, 
-            rotate: 6,
-            clipPath: isMobile ? "none" : "inset(0% 0% 0% 0% round 8px)",
-            transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: 0.04 }
-          },
-          exit: { 
-            opacity: 0, 
-            scale: 0.85, 
-            x: isMobile ? 14 : 20, 
-            rotate: 15,
-            clipPath: isMobile ? "none" : "inset(10% 10% 10% 10% round 8px)",
-            transition: { duration: 0.3, ease: [0.16, 1, 0.3, 1] }
-          }
-        }}
-        style={{ 
-          transformStyle: "preserve-3d",
-          z: 15
-        }}
-        className="absolute w-[50px] h-[65px] md:w-[110px] md:h-[140px] bg-white rounded-[8px] md:rounded-[12px] shadow-[0_12px_30px_rgba(0,0,0,0.12)] overflow-hidden border border-neutral-200/40 z-10"
-      >
-        {service.image2 ? (
-          // eslint-disable-next-line @next/next/no-img-element -- admin-uploaded URLs of unknown host/size
-          <img
-            src={service.image2}
-            alt={`${service.title} preview mockup`}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full bg-white/10" />
-        )}
-      </motion.div>
-    </motion.div>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   Desktop & Mobile Row 3D Parallax Hover Container
-   ───────────────────────────────────────────── */
-interface RowPreviewContainerProps {
-  isActive: boolean;
-  service: Service;
-  isMobile: boolean;
-}
-
-function RowPreviewContainer({ isActive, service, isMobile }: RowPreviewContainerProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const rectRef = useRef<DOMRect | null>(null);
-  
-  // Motion values to keep mouse coordinates reactive without state updates
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  // Springs for buttery smooth physics transitions
-  const rotateX = useSpring(
-    useTransform(mouseY, [-0.5, 0.5], [12, -12]), 
-    { stiffness: 100, damping: 20 }
-  );
-  const rotateY = useSpring(
-    useTransform(mouseX, [-0.5, 0.5], [-12, 12]), 
-    { stiffness: 100, damping: 20 }
-  );
-
-  // Combine springs into a standard CSS transform property via useMotionTemplate
-  const transform = useMotionTemplate`perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    let rect = rectRef.current;
-    if (!rect) {
-      if (!containerRef.current) return;
-      rect = containerRef.current.getBoundingClientRect();
-      rectRef.current = rect;
-    }
-    const x = (e.clientX - rect.left) / rect.width - 0.5;
-    const y = (e.clientY - rect.top) / rect.height - 0.5;
-    mouseX.set(x);
-    mouseY.set(y);
-  };
-
-  const handleMouseLeave = () => {
-    rectRef.current = null;
-    mouseX.set(0);
-    mouseY.set(0);
-  };
-
-  return (
-    <motion.div
-      ref={containerRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      style={{
-        transform,
-        transformStyle: "preserve-3d"
-      }}
-      className="relative w-[80px] h-[55px] md:w-[240px] md:h-[160px] flex items-center justify-center pointer-events-auto select-none"
-    >
-      <AnimatePresence>
-        {isActive && (
-          <ImageStackPreview service={service} isMobile={isMobile} />
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-}
-
-/* ─────────────────────────────────────────────
-   Main Services Component
-   ───────────────────────────────────────────── */
-export default function Services() {
-  const [activeIndex, setActiveIndex] = useState(0);
+export default function Services({ projects = [] }: { projects?: Project[] }) {
   const [services, setServices] = useState<Service[]>(SERVICES_DATA);
-  const [isMobile, setIsMobile] = useState(false);
-  const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
-
-  // Monitor breakpoint states
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
-    handleResize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  // Viewport center intersection detector (Desktop & Mobile)
-  useEffect(() => {
-    const observerOptions = {
-      root: null,
-      rootMargin: "-45% 0px -45% 0px", // Detect inside vertical 10% center band
-      threshold: 0,
-    };
-
-    const observerCallback = (entries: IntersectionObserverEntry[]) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const index = rowRefs.current.findIndex((ref) => ref === entry.target);
-          if (index !== -1) {
-            setActiveIndex(index);
-          }
-        }
-      });
-    };
-
-    const observer = new IntersectionObserver(observerCallback, observerOptions);
-    rowRefs.current.forEach((ref) => {
-      if (ref) observer.observe(ref);
-    });
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [services]); // Re-run observer if services change dynamically
+  const [active, setActive] = useState(0);
+  const rows = useRef<(HTMLLIElement | null)[]>([]);
+  const reduce = useReducedMotion();
 
   useEffect(() => {
-    // Dynamic fetch from Next.js API Route handler
     fetch("/api/services")
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setServices(data);
-        }
-      })
-      .catch((err) => console.error("Failed to load services from API:", err));
+      .then((r) => r.json())
+      .then((d) => { if (Array.isArray(d) && d.length) setServices(d); })
+      .catch(() => {});
   }, []);
 
-  // Click behavior transitions active state and scrolls views into center
-  const handleRowClick = (index: number) => {
-    setActiveIndex(index);
-    rowRefs.current[index]?.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-  };
+  // The row nearest the middle of the screen is the active one
+  useEffect(() => {
+    const io = new IntersectionObserver(
+      (entries) => entries.forEach((e) => {
+        if (e.isIntersecting) {
+          const i = rows.current.indexOf(e.target as HTMLLIElement);
+          if (i !== -1) setActive(i);
+        }
+      }),
+      { rootMargin: "-45% 0px -45% 0px" },
+    );
+    rows.current.forEach((r) => r && io.observe(r));
+    return () => io.disconnect();
+  }, [services]);
+
+  const data = useMemo(() => services.map((s) => {
+    const matched = projectsFor(s, projects);
+    return { s, matched, images: imagesFor(s, matched) };
+  }), [services, projects]);
+  const current = data[active] ?? data[0];
 
   return (
-    <section
-      id="about"
-      className="bg-brand-bg text-text-main pb-[120px] pb-[80px] px-4 relative z-10 overflow-hidden"
-    >
-      <div className="max-w-[1080px] mx-auto flex flex-col">
-        
-        {/* Top Header Row (matching SelectedWorks heading design) */}
-        <div className="flex flex-col items-center gap-3 w-full mb-6 border-b border-[#E3E3E8] pb-6">
-          <p className="font-kyiv-sans text-[14px] font-normal leading-normal text-[#5C5C5C] m-0 select-none">
-            (Services)
-          </p>
-          <div className="flex items-end">
-            <h2 className="font-kyiv text-[clamp(48px,5.5vw,80px)] font-normal leading-none tracking-[-0.02em] m-0 bg-gradient-to-b from-[rgba(12,12,12,0.82)] to-[rgba(12,12,12,0.5)] bg-clip-text text-transparent select-none">
-              Services
-            </h2>
-          </div>
-        </div>
-
-        {/* Section Headline */}
-        <div className="mb-10 flex justify-center max-w-[90%] m-auto text-center">
-          <h2 className="font-kyiv-serif text-[32px] md:text-[40px] font-bold leading-[1.1] text-[#0D0D0D] max-w-[90%] tracking-[-0.02em]">
-            <StaggeredText
-              text="Your Competitors Didn't Get Better."
-              trigger="scroll"
-              delay={0.1}
-            />
-            <span className="font-kyiv-serif text-[#888] font-normal ml-2 block md:inline">
-              <StaggeredText
-                text="They Just Rebranded First."
-                trigger="scroll"
-                delay={0.6}
-              />
-            </span>
+    <section id="about" aria-labelledby="services-title" className="w-full bg-white py-24 md:py-32">
+      <div className="px-4 sm:px-6 lg:px-10 max-w-[1400px] mx-auto">
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:items-end mb-12 md:mb-20">
+          <h2 id="services-title" className="font-kyiv font-normal tracking-[-0.04em] leading-[0.92] text-[clamp(48px,7vw,104px)] text-brand-text">
+            What I do
           </h2>
+          <p className="max-w-[48ch] font-kyiv-serif text-[clamp(18px,1.6vw,22px)] leading-[1.5] text-brand-gray">
+            Your competitors didn&apos;t get better. They just rebranded first. Here&apos;s how I help teams get there before them.
+          </p>
         </div>
 
-        {/* Services Showcase typographic rows */}
-        <div className="flex flex-col border-b border-[#E3E3E8] relative z-10 w-full">
-          {services.map((service, index) => {
-            const isActive = activeIndex === index;
-            
-            // Animated color classes
-            const numColorClass = isActive ? "text-[#0D0D0D]" : "text-[#9E9EA5] group-hover:text-[#5F5F65]";
-            const titleColorClass = isActive ? "text-[#0D0D0D]" : "text-[#8A8A92] group-hover:text-[#4C4C52]";
-            const descColorClass = isActive ? "text-[#55555C]" : "text-[#A1A1A8]";
-            const arrowColorClass = isActive 
-              ? "text-[#0D0D0D] opacity-100 scale-105" 
-              : "text-[#B5B5BE] opacity-50 scale-100 group-hover:text-[#5F5F65] group-hover:opacity-100";
-
-            return (
-              <motion.button
-                key={service.id}
-                ref={(el) => {
-                  rowRefs.current[index] = el;
-                }}
-                onClick={() => handleRowClick(index)}
-                initial={{ opacity: 0, y: 50, scale: 0.98 }}
-                whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                viewport={{ once: true, margin: "-80px" }}
-                transition={{ 
-                  duration: 0.7, 
-                  ease: [0.16, 1, 0.3, 1],
-                  delay: index * 0.08
-                }}
-                className="w-full text-left flex flex-col py-6 md:py-11 border-t border-[#E3E3E8] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#6B21D9] focus-visible:ring-offset-2 relative transition-colors duration-300 group cursor-pointer"
-                itemScope
-                itemType="https://schema.org/Service"
-              >
-                <div className="w-full grid grid-cols-12 items-center gap-4 md:gap-6">
-                  
-                  {/* Left Column (Info / Description) */}
-                  <div className="col-span-8 md:col-span-7 flex flex-col justify-center text-left">
-                    <div className="flex items-center gap-3 md:gap-5 select-none">
-                      {/* Number */}
-                      <span className={`font-kyiv-sans font-bold text-lg md:text-[30px] tracking-tight transition-colors duration-300 ${numColorClass}`}>
-                        {service.num}
-                      </span>
-                      {/* Em-dash */}
-                      <span className="text-neutral-300 text-sm md:text-2xl font-light font-kyiv-sans select-none">—</span>
-                      {/* Title + Count */}
-                      <span className="relative flex items-start">
-                        <span className={`font-kyiv-sans font-semibold text-lg md:text-[32px] tracking-tight transition-all duration-300 group-hover:translate-x-1.5 ${titleColorClass}`} itemProp="name">
-                          {service.title}
-                        </span>
-                        <span className="text-[9px] md:text-[11px] font-kyiv-sans text-neutral-400 ml-1.5 self-start pt-0.5 md:pt-1 font-normal select-none">
-                          {service.count}
-                        </span>
-                      </span>
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-16">
+          {/* Sticky preview (desktop) */}
+          <div className="hidden lg:block">
+            <div className="sticky top-28 aspect-[4/5] max-h-[calc(100vh-9rem)] w-full rounded-[28px] overflow-hidden bg-[#0b0b0f]">
+              <AnimatePresence initial={false} mode="popLayout">
+                <motion.div
+                  key={current?.s.id}
+                  className="absolute inset-0"
+                  initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 1.04 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: reduce ? 0.2 : 0.6, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  {current?.images[0] && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={sized(current.images[0], 1200)} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                  )}
+                  {current?.images[1] && (
+                    <div className="absolute right-6 bottom-6 w-[42%] aspect-[4/3] rounded-[18px] overflow-hidden ring-1 ring-white/20 shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={sized(current.images[1], 700)} alt="" className="w-full h-full object-cover" />
                     </div>
+                  )}
+                  <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-black/45 to-transparent" />
+                  <p className="absolute left-6 top-6 font-kyiv-sans text-[14px] text-white/90">
+                    {current?.matched.length ? `From ${current.matched.slice(0, 3).map((p) => p.clientName).join(", ")}` : current?.s.title}
+                  </p>
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
 
-                    {/* Description */}
-                    <div className={`font-kyiv-sans text-[12px] md:text-[15px] font-light leading-relaxed mt-2 md:mt-4 transition-colors duration-300 ${descColorClass}`}>
-                      {service.description}
+          {/* The list */}
+          <ol className="border-t border-brand-border">
+            {data.map(({ s, matched, images }, i) => {
+              const on = i === active;
+              return (
+                <li
+                  key={s.id}
+                  ref={(el) => { rows.current[i] = el; }}
+                  onMouseEnter={() => setActive(i)}
+                  className="border-b border-brand-border py-8 md:py-10"
+                >
+                  <div className="flex items-baseline gap-4 md:gap-6">
+                    <span className={`font-kyiv-sans text-[14px] tabular-nums transition-colors ${on ? "text-brand-purple" : "text-brand-gray/60"}`}>{String(i + 1).padStart(2, "0")}</span>
+                    <div className="min-w-0 flex-1">
+                      <h3 className={`font-kyiv font-normal tracking-[-0.035em] leading-[0.98] text-[clamp(34px,4.6vw,64px)] transition-colors duration-300 ${on ? "text-brand-text" : "text-brand-text/35"}`}>
+                        {s.title}
+                      </h3>
+                      <p className="mt-4 max-w-[52ch] font-kyiv-sans text-[16px] md:text-[17px] leading-[1.65] text-brand-gray">{s.description}</p>
+
+                      {/* images inline on phones and tablets */}
+                      {images.length > 0 && (
+                        <div className="lg:hidden mt-6 grid grid-cols-2 gap-2">
+                          {images.slice(0, 2).map((src) => (
+                            <div key={src} className="relative aspect-[4/3] rounded-[16px] overflow-hidden bg-[#f2f0f8]">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={sized(src, 700)} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {matched.length > 0 && (
+                        <p className="mt-5 font-kyiv-sans text-[14px] text-brand-gray">
+                          <span className="text-brand-gray/80">Seen in </span>
+                          {matched.slice(0, 4).map((p, k) => (
+                            <React.Fragment key={p.id}>
+                              {k > 0 && ", "}
+                              <Link href={`/work/${p.id}`} className="text-brand-text underline decoration-brand-border underline-offset-4 hover:decoration-brand-purple hover:text-brand-purple transition-colors">{p.clientName}</Link>
+                            </React.Fragment>
+                          ))}
+                          {matched.length > 4 && <span> and {matched.length - 4} more</span>}
+                        </p>
+                      )}
                     </div>
                   </div>
-
-                  {/* Middle Column (Row-integrated side-by-side image stack - Desktop & Mobile) */}
-                  <div className="col-span-3 md:col-span-4 flex items-center justify-center select-none pointer-events-auto">
-                    <RowPreviewContainer isActive={isActive} service={service} isMobile={isMobile} />
-                  </div>
-
-                  {/* Right Column (Arrow) */}
-                  <div className="col-span-1 md:col-span-1 flex justify-end items-center select-none">
-                    <ArrowIcon className={`w-5 h-5 md:w-9 md:h-9 transition-all duration-300 transform ${arrowColorClass} group-hover:translate-x-1 group-hover:-translate-y-1`} />
-                  </div>
-                </div>
-              </motion.button>
-            );
-          })}
+                </li>
+              );
+            })}
+          </ol>
         </div>
-
       </div>
     </section>
   );

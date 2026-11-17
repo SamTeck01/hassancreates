@@ -14,7 +14,7 @@ test.describe("SEO (crawler view, JavaScript disabled)", () => {
     for (const p of projects.slice(0, 5)) expect(nospace(text)).toContain(nospace(p.clientName));
     // textContent, not innerText: the marquee is CSS-uppercased
     const raw = await page.evaluate(() => document.body.textContent ?? "");
-    for (const s of ["Services", "Recent Works", "4 Years of Experience"]) expect(raw).toContain(s);
+    for (const s of ["What I do", "Recent Works", "4 Years of Experience"]) expect(raw).toContain(s);
     // every project is crawlable from /work, server-rendered
     await page.goto("/work");
     const work = nospace(await page.evaluate(() => document.body.innerText));

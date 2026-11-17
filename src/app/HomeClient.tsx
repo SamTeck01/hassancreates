@@ -39,7 +39,7 @@ export default function HomeClient({ projects }: { projects: Project[] }) {
       <DoubleMarquee />
 
       {/* Services Section */}
-      <Services />
+      <Services projects={projects} />
 
       {/* Selected Works Section */}
       <SelectedWorks initialProjects={projects} />

@@ -22,7 +22,7 @@ function validateServicePayload(data: Record<string, unknown>, requireNum = true
   if (!description) return "Service description is required.";
   // `num` is only sent when creating; edits keep the existing number.
   if (requireNum && !num) return "Service number is required.";
-  if (!count) return "Service count is required.";
+  // count is optional: the site shows which projects use each service instead
   return null;
 }
 

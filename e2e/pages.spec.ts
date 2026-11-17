@@ -70,3 +70,22 @@ test.describe("multi-page site", () => {
     for (const p of projects) expect(xml).toContain(`/work/${p.id}<`);
   });
 });
+
+test("services: every service has real project images and links to work", async ({ page, request }) => {
+  const services = await (await request.get("/api/services")).json();
+  const t = trackErrors(page);
+  await page.goto("/", { waitUntil: "networkidle" });
+  const sec = page.getByRole("region", { name: "What I do" });
+  await sec.scrollIntoViewIfNeeded();
+  await expect(sec.getByRole("heading", { level: 3 })).toHaveCount(services.length);
+  for (const s of services) await expect(sec.getByRole("heading", { level: 3, name: s.title })).toBeVisible();
+  // no leftover template images
+  const srcs = await sec.locator("img").evaluateAll((a) => a.map((i) => (i as HTMLImageElement).getAttribute("src") ?? ""));
+  for (const s of srcs) expect(s).not.toMatch(/\/works\/|framerusercontent/);
+  const links = sec.locator('a[href^="/work/"]');
+  if (await links.count()) {
+    await links.first().click();
+    await page.waitForURL(/\/work\/[^/]+$/);
+  }
+  t.expectClean();
+});

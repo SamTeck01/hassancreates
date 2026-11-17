@@ -60,7 +60,7 @@ export default async function AboutPage() {
       </div>
 
       <div className="mt-20 sm:mt-28"><ClientLogos /></div>
-      <Services />
+      <Services projects={projects} />
 
       <div className="px-4 sm:px-6 lg:px-10 max-w-[1400px] mx-auto py-24 sm:py-32 text-center">
         <p className="font-kyiv tracking-[-0.04em] leading-[0.95] text-[clamp(40px,7vw,104px)] text-brand-text">Have a project in mind?</p>
