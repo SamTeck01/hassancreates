@@ -79,9 +79,12 @@ test("services: every service has real project images and links to work", async 
   await sec.scrollIntoViewIfNeeded();
   await expect(sec.getByRole("heading", { level: 3 })).toHaveCount(services.length);
   for (const s of services) await expect(sec.getByRole("heading", { level: 3, name: s.title })).toBeVisible();
-  // no leftover template images
+  // every picture comes from one of the projects on the site
+  const projects = await (await request.get("/api/projects")).json();
+  const known = new Set<string>(projects.flatMap((p: { coverImage: string; swiperImages?: string[] }) => [p.coverImage, ...(p.swiperImages ?? [])]).map((u: string) => u.replace(/\/upload\/[^/]*w_\d+[^/]*\//, "/upload/")));
   const srcs = await sec.locator("img").evaluateAll((a) => a.map((i) => (i as HTMLImageElement).getAttribute("src") ?? ""));
-  for (const s of srcs) expect(s).not.toMatch(/\/works\/|framerusercontent/);
+  expect(srcs.length).toBeGreaterThan(0);
+  for (const s of srcs) expect(known.has(s.replace(/\/upload\/[^/]*w_\d+[^/]*\//, "/upload/")), s).toBeTruthy();
   const links = sec.locator('a[href^="/work/"]');
   if (await links.count()) {
     await links.first().click();

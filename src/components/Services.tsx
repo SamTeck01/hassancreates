@@ -27,10 +27,13 @@ const MATCH: Record<string, string[]> = {
 
 function projectsFor(service: Service, projects: Project[]): Project[] {
   const words = service.title.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
-  const keys = [...new Set(words.flatMap((w) => MATCH[w] ?? (w.length > 3 ? [w] : [])))];
+  // generic words ("design", "branding") would match everything — skip them
+  const GENERIC = new Set(["design", "designs", "designer", "branding", "and", "the", "for", "services"]);
+  const keys = [...new Set(words.flatMap((w) => MATCH[w] ?? (w.length > 3 && !GENERIC.has(w) ? [w] : [])))];
   if (!keys.length) return [];
+  // only the project's own fields: every role says "designer", so it can't tell services apart
   return projects.filter((p) => {
-    const hay = ` ${[...p.services, p.role, p.clientName].join(" ").toLowerCase()} `;
+    const hay = ` ${p.services.join(" ").toLowerCase()} `;
     return keys.some((k) => hay.includes(k));
   });
 }
@@ -98,7 +101,7 @@ export default function Services({ projects = [] }: { projects?: Project[] }) {
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-16">
           {/* Sticky preview (desktop) */}
           <div className="hidden lg:block">
-            <div className="sticky top-28 aspect-[4/5] max-h-[calc(100vh-9rem)] w-full rounded-[28px] overflow-hidden bg-[#0b0b0f]">
+            <div className="sticky top-28 h-[min(70vh,680px)] w-full rounded-[28px] overflow-hidden bg-[#0b0b0f]">
               <AnimatePresence initial={false} mode="popLayout">
                 <motion.div
                   key={current?.s.id}
@@ -136,7 +139,7 @@ export default function Services({ projects = [] }: { projects?: Project[] }) {
                   key={s.id}
                   ref={(el) => { rows.current[i] = el; }}
                   onMouseEnter={() => setActive(i)}
-                  className="border-b border-brand-border py-8 md:py-10"
+                  className="border-b border-brand-border py-8 md:py-10 lg:min-h-[42vh] lg:flex lg:items-center"
                 >
                   <div className="flex items-baseline gap-4 md:gap-6">
                     <span className={`font-kyiv-sans text-[14px] tabular-nums transition-colors ${on ? "text-brand-purple" : "text-brand-gray/60"}`}>{String(i + 1).padStart(2, "0")}</span>
